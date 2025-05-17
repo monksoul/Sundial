@@ -202,6 +202,22 @@ public sealed class ScheduleOptionsBuilder
     /// <summary>
     /// 添加作业
     /// </summary>
+    /// <typeparam name="TJob"><see cref="IJob"/> 实现类型</typeparam>
+    /// <param name="buildJob">作业构建器委托</param>
+    /// <param name="triggerBuilders">作业触发器构建器集合</param>
+    /// <returns><see cref="ScheduleOptionsBuilder"/></returns>
+    public ScheduleOptionsBuilder AddJob<TJob>(Action<JobBuilder> buildJob, params TriggerBuilder[] triggerBuilders)
+         where TJob : class, IJob
+    {
+        var jobBuilder = JobBuilder.Create<TJob>();
+        buildJob?.Invoke(jobBuilder);
+
+        return AddJob(jobBuilder, triggerBuilders);
+    }
+
+    /// <summary>
+    /// 添加作业
+    /// </summary>
     /// <param name="jobType"><see cref="IJob"/> 实现类型</param>
     /// <param name="triggerBuilders">作业触发器构建器集合</param>
     /// <returns><see cref="ScheduleOptionsBuilder"/></returns>

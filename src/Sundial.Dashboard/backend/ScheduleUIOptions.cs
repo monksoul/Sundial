@@ -2,6 +2,8 @@
 //
 // 此源代码遵循位于源代码树根目录中的 LICENSE 文件的许可证。
 
+using Microsoft.AspNetCore.Http;
+
 namespace Sundial;
 
 /// <summary>
@@ -51,4 +53,12 @@ public sealed class ScheduleUIOptions
     /// 是否默认展开所有作业
     /// </summary>
     public bool DefaultExpandAllJobs { get; set; } = false;
+
+    /// <summary>
+    /// 登录逻辑
+    /// </summary>
+    public Func<string, string, HttpContext, Task<bool>> LoginHandle { get; set; } = (username, password, httpContext) =>
+    {
+        return Task.FromResult(username == "schedule" && string.IsNullOrWhiteSpace(password));
+    };
 }

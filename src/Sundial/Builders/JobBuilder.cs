@@ -272,6 +272,26 @@ public sealed class JobBuilder : JobDetail
     }
 
     /// <summary>
+    /// 设置为临时作业
+    /// </summary>
+    /// <returns><see cref="JobBuilder"/></returns>
+    public JobBuilder SetTemporary()
+    {
+        return SetTemporary(true);
+    }
+
+    /// <summary>
+    /// 设置是否是临时作业
+    /// </summary>
+    /// <param name="isTemporary"><see cref="bool"/></param>
+    /// <returns><see cref="JobBuilder"/></returns>
+    public JobBuilder SetTemporary(bool isTemporary)
+    {
+        Temporary = isTemporary;
+        return this;
+    }
+
+    /// <summary>
     /// 设置作业信息额外数据
     /// </summary>
     /// <param name="properties">作业信息额外数据</param>

@@ -120,5 +120,10 @@
             是否默认展开所有作业
             </summary>
         </member>
+        <member name="P:Sundial.ScheduleUIOptions.LoginHandle">
+            <summary>
+            登录逻辑
+            </summary>
+        </member>
     </members>
 </doc>

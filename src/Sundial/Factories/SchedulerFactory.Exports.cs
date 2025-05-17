@@ -429,6 +429,24 @@ internal sealed partial class SchedulerFactory
     /// <summary>
     /// 添加作业
     /// </summary>
+    /// <typeparam name="TJob"><see cref="IJob"/> 实现类型</typeparam>
+    /// <param name="buildJob">作业构建器委托</param>
+    /// <param name="triggerBuilders">作业触发器构建器集合</param>
+    /// <param name="scheduler">作业计划</param>
+    /// <param name="immediately">是否立即通知作业调度器重新载入</param>
+    /// <remarks><see cref="ScheduleResult"/></remarks>
+    public ScheduleResult TryAddJob<TJob>(Action<JobBuilder> buildJob, TriggerBuilder[] triggerBuilders, out IScheduler scheduler, bool immediately = true)
+         where TJob : class, IJob
+    {
+        var jobBuilder = JobBuilder.Create<TJob>();
+        buildJob?.Invoke(jobBuilder);
+
+        return TryAddJob(jobBuilder, triggerBuilders, out scheduler, immediately);
+    }
+
+    /// <summary>
+    /// 添加作业
+    /// </summary>
     /// <param name="jobType"><see cref="IJob"/> 实现类型</param>
     /// <param name="triggerBuilders">作业触发器构建器集合</param>
     /// <param name="scheduler">作业计划</param>
@@ -461,6 +479,18 @@ internal sealed partial class SchedulerFactory
          where TJob : class, IJob
     {
         _ = TryAddJob<TJob>(triggerBuilders, out _);
+    }
+
+    /// <summary>
+    /// 添加作业
+    /// </summary>
+    /// <typeparam name="TJob"><see cref="IJob"/> 实现类型</typeparam>
+    ///  <param name="buildJob">作业构建器委托</param>
+    /// <param name="triggerBuilders">作业触发器构建器集合</param>
+    public void AddJob<TJob>(Action<JobBuilder> buildJob, params TriggerBuilder[] triggerBuilders)
+         where TJob : class, IJob
+    {
+        _ = TryAddJob<TJob>(buildJob, triggerBuilders, out _);
     }
 
     /// <summary>

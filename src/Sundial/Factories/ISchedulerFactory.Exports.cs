@@ -124,6 +124,18 @@ public partial interface ISchedulerFactory : IDisposable
     /// <summary>
     /// 添加作业
     /// </summary>
+    /// <typeparam name="TJob"><see cref="IJob"/> 实现类型</typeparam>
+    /// <param name="buildJob">作业构建器委托</param>
+    /// <param name="triggerBuilders">作业触发器构建器集合</param>
+    /// <param name="scheduler">作业计划</param>
+    /// <param name="immediately">是否立即通知作业调度器重新载入</param>
+    /// <remarks><see cref="ScheduleResult"/></remarks>
+    ScheduleResult TryAddJob<TJob>(Action<JobBuilder> buildJob, TriggerBuilder[] triggerBuilders, out IScheduler scheduler, bool immediately = true)
+        where TJob : class, IJob;
+
+    /// <summary>
+    /// 添加作业
+    /// </summary>
     /// <param name="jobType"><see cref="IJob"/> 实现类型</param>
     /// <param name="triggerBuilders">作业触发器构建器集合</param>
     /// <param name="scheduler">作业计划</param>
@@ -148,6 +160,15 @@ public partial interface ISchedulerFactory : IDisposable
     /// <param name="triggerBuilders">作业触发器构建器集合</param>
     void AddJob<TJob>(params TriggerBuilder[] triggerBuilders)
          where TJob : class, IJob;
+
+    /// <summary>
+    /// 添加作业
+    /// </summary>
+    /// <typeparam name="TJob"><see cref="IJob"/> 实现类型</typeparam>
+    ///  <param name="buildJob">作业构建器委托</param>
+    /// <param name="triggerBuilders">作业触发器构建器集合</param>
+    void AddJob<TJob>(Action<JobBuilder> buildJob, params TriggerBuilder[] triggerBuilders)
+        where TJob : class, IJob;
 
     /// <summary>
     /// 添加作业

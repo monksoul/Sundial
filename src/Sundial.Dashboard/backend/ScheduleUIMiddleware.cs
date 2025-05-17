@@ -109,6 +109,13 @@ public sealed class ScheduleUIMiddleware
             return;
         }
 
+        // 处理刷新登录页面出现 404 情况
+        if (context.Request.Path.Equals(staticFilePath + "login", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Response.Redirect(staticFilePath);
+            return;
+        }
+
         // ================================ 处理 API 请求 ================================
 
         // 如果不是以 API_REQUEST_PATH 开头，则跳过
@@ -301,6 +308,37 @@ public sealed class ScheduleUIMiddleware
                     _schedulerFactory.OnChanged -= Subscribe;
                 }
                 break;
+            // 登录验证
+            case "/login":
+                var username = context.Request.Form["username"];
+                var password = context.Request.Form["password"];
+
+                try
+                {
+                    // 调用自定义验证逻辑
+                    if (Options.LoginHandle is not null && await Options.LoginHandle(username, password, context))
+                    {
+                        context.Response.StatusCode = StatusCodes.Status200OK;
+                        await context.Response.WriteAsync("OK");
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        await context.Response.WriteAsync("用户名或密码错误");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                    await context.Response.WriteAsync(ex.Message);
+                }
+
+                break;
+            // 未处理接口
+            default:
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                await context.Response.WriteAsync("Not Found");
+                return;
         }
     }
 

@@ -69,6 +69,12 @@ public partial class JobDetail
     public DateTime? UpdatedTime { get; internal set; }
 
     /// <summary>
+    /// 是否是临时作业
+    /// </summary>
+    [JsonInclude]
+    internal bool Temporary { get; set; } = false;
+
+    /// <summary>
     /// 标记其他作业正在执行
     /// </summary>
     /// <remarks>当 <see cref="Concurrent"/> 为 false 时有效，也就是串行执行</remarks>

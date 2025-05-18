@@ -61,4 +61,9 @@ public sealed class ScheduleUIOptions
     {
         return Task.FromResult(username == "schedule" && string.IsNullOrWhiteSpace(password));
     };
+
+    /// <summary>
+    /// 客户端存储的 SessionKey
+    /// </summary>
+    public string LoginSessionKey { get; set; } = "schedule_session_key";
 }

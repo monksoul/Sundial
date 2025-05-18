@@ -125,5 +125,10 @@
             登录逻辑
             </summary>
         </member>
+        <member name="P:Sundial.ScheduleUIOptions.LoginSessionKey">
+            <summary>
+            客户端存储的 SessionKey
+            </summary>
+        </member>
     </members>
 </doc>

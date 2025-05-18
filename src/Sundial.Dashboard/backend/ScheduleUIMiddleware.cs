@@ -100,7 +100,8 @@ public sealed class ScheduleUIMiddleware
                              .Replace("%(DisplayHead)", Options.DisplayHead ? "true" : "false")
                              .Replace("%(DefaultExpandAllJobs)", Options.DefaultExpandAllJobs ? "true" : "false")
                              .Replace("%(UseUtcTimestamp)", ScheduleOptionsBuilder.UseUtcTimestampProperty ? "true" : "false")
-                             .Replace("%(Title)", Options.Title ?? string.Empty);
+                             .Replace("%(Title)", Options.Title ?? string.Empty)
+                             .Replace("%(LoginSessionKey)", Options.LoginSessionKey ?? "schedule_session_key");
             }
 
             // 输出到客户端

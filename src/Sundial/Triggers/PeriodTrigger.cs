@@ -64,24 +64,59 @@ public class PeriodTrigger : Trigger
     /// <returns><see cref="string"/></returns>
     public override string ToString()
     {
-        return $"<{JobId} {TriggerId}> {GetUnit()}{(string.IsNullOrWhiteSpace(Description) ? string.Empty : $" {Description.GetMaxLengthString()}")} {NumberOfRuns}ts";
+        return $"<{JobId} {TriggerId}> {FormatDuration(Interval)}{(string.IsNullOrWhiteSpace(Description) ? string.Empty : $" {Description.GetMaxLengthString()}")} {NumberOfRuns}ts";
     }
 
     /// <summary>
-    /// 计算间隔单位
+    /// 将毫秒数格式化为更直观的时间单位字符串（如 ms, s, min, h, d, y）
     /// </summary>
-    /// <returns></returns>
-    private string GetUnit()
+    /// <param name="ms">毫秒</param>
+    /// <returns><see cref="string"/></returns>
+    private static string FormatDuration(long ms)
     {
-        // 毫秒
-        if (Interval < 1000) return $"{Interval}ms";
-        // 秒
-        if (Interval >= 1000 && Interval < 1000 * 60 && Interval % 1000 == 0) return $"{Interval / 1000}s";
-        // 分钟
-        if (Interval >= 1000 * 60 && Interval < 1000 * 60 * 60 && Interval % (1000 * 60) == 0) return $"{Interval / (1000 * 60)}min";
-        // 小时
-        if (Interval >= 1000 * 60 * 60 && Interval < 1000 * 60 * 60 * 24 && Interval % (1000 * 60 * 60) == 0) return $"{Interval / (1000 * 60 * 60)}h";
+        if (ms < 1000)
+        {
+            return $"{ms}ms";
+        }
 
-        return $"{Interval}ms";
+        var seconds = ms / 1000.0;
+        if (seconds < 60)
+        {
+            var val = Math.Round(seconds * 10) / 10;
+            if (val >= 60)
+                return FormatDuration((long)(val * 1000));
+            return val % 1 == 0 ? $"{val:F0}s" : $"{val:F1}s";
+        }
+
+        var minutes = seconds / 60;
+        if (minutes < 60)
+        {
+            var val = Math.Round(minutes * 10) / 10;
+            if (val >= 60)
+                return FormatDuration((long)(val * 60 * 1000));
+            return val % 1 == 0 ? $"{val:F0}min" : $"{val:F1}min";
+        }
+
+        var hours = minutes / 60;
+        if (hours < 24)
+        {
+            var val = Math.Round(hours * 10) / 10;
+            if (val >= 24)
+                return FormatDuration((long)(val * 60 * 60 * 1000));
+            return val % 1 == 0 ? $"{val:F0}h" : $"{val:F1}h";
+        }
+
+        var days = hours / 24;
+        if (days < 365)
+        {
+            var val = Math.Round(days * 10) / 10;
+            if (val >= 365)
+                return FormatDuration((long)(val * 24 * 60 * 60 * 1000));
+            return val % 1 == 0 ? $"{val:F0}d" : $"{val:F1}d";
+        }
+
+        var years = days / 365;
+        var finalVal = Math.Round(years * 10) / 10;
+        return finalVal % 1 == 0 ? $"{finalVal:F0}y" : $"{finalVal:F1}y";
     }
 }

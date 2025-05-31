@@ -127,7 +127,7 @@ public sealed class ScheduleUIMiddleware
         }
 
         // 只处理 GET/POST 请求
-        if (context.Request.Method.ToUpper() != "GET" && context.Request.Method.ToUpper() != "POST")
+        if (!context.Request.Method.Equals("GET", StringComparison.CurrentCultureIgnoreCase) && !context.Request.Method.Equals("POST", StringComparison.CurrentCultureIgnoreCase))
         {
             await _next(context);
             return;
@@ -138,15 +138,15 @@ public sealed class ScheduleUIMiddleware
 
         // 允许跨域，设置返回 json
         context.Response.ContentType = "application/json; charset=utf-8";
-        context.Response.Headers["Access-Control-Allow-Origin"] = "*";
-        context.Response.Headers["Access-Control-Allow-Headers"] = "*";
+        context.Response.Headers.AccessControlAllowOrigin = "*";
+        context.Response.Headers.AccessControlAllowHeaders = "*";
 
         // 路由匹配
         switch (action)
         {
             // 获取所有作业
             case "/get-jobs":
-                var jobs = _schedulerFactory.GetJobsOfModels().OrderBy(u => u.JobDetail.GroupName);
+                var jobs = _schedulerFactory.GetJobsOfModels().OrderBy(u => u.JobDetail.GroupName).ThenBy(u => u.JobDetail.JobId);
 
                 // 输出 JSON
                 await context.Response.WriteAsync(SerializeToJson(jobs));
@@ -357,7 +357,9 @@ public sealed class ScheduleUIMiddleware
             ReadCommentHandling = JsonCommentHandling.Skip,
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             AllowTrailingCommas = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            WriteIndented = false
         };
 
         // 处理时间类型

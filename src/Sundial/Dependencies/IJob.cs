@@ -23,8 +23,11 @@ public interface IJob
     /// <param name="context">作业执行前上下文</param>
     /// <param name="stoppingToken">取消任务 Token</param>
     /// <returns><see cref="Task"/></returns>
-    Task FallbackAsync(JobExecutedContext context, CancellationToken stoppingToken)
-    {
-        return Task.CompletedTask;
-    }
+    Task FallbackAsync(JobExecutedContext context, CancellationToken stoppingToken) => Task.CompletedTask;
+
+    /// <summary>
+    /// 获取需要存入执行上下文的数据
+    /// </summary>
+    /// <returns><see cref="IDictionary{TKey, TValue}"/></returns>
+    IDictionary<string, object> GetContextData() => new Dictionary<string, object>();
 }

@@ -227,6 +227,9 @@ internal sealed class ScheduleHostedService : BackgroundService
                                 Mode = trigger.Mode
                             });
 
+                            // 存储作业执行过程中需要传递的数据
+                            jobExecutingContext.Items = jobHandler.GetContextData() ?? new Dictionary<string, object>();
+
                             // 调用执行前监视器
                             if (Monitor != default)
                             {
@@ -313,7 +316,8 @@ internal sealed class ScheduleHostedService : BackgroundService
                                     ExecutedTime = Penetrates.GetNowTime(),
                                     Exception = executionException,
                                     Result = jobExecutingContext.Result,
-                                    Mode = trigger.Mode
+                                    Mode = trigger.Mode,
+                                    Items = jobExecutingContext.Items
                                 };
 
                                 // 是否定义 FallbackAsync 方法
@@ -375,6 +379,9 @@ internal sealed class ScheduleHostedService : BackgroundService
                             {
                                 scheduler.Remove();
                             }
+
+                            // 清空存储作业执行过程中传递的数据
+                            jobExecutingContext.Items?.Clear();
 
                             // 释放服务作用域
                             await ReleaseJobHandlerAsync(jobHandler);

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<Version>2.77</Version>
+		<Version>2.78</Version>
 		<Description>Sundial Dashboard 看板</Description>
 	</PropertyGroup>
 

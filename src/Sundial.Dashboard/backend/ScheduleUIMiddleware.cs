@@ -151,6 +151,16 @@ public sealed class ScheduleUIMiddleware
                 // 输出 JSON
                 await context.Response.WriteAsync(SerializeToJson(jobs));
                 break;
+            // 获取所有运行记录
+            case "/timelines-log":
+                var allTimelines = _schedulerFactory.GetJobs()
+                    .SelectMany(u => u.GetTriggers().SelectMany(s => s.GetTimelines()))
+                    .OrderByDescending(u => u.CreatedTime)
+                    .Take(20);  // 默认取 20 条
+
+                // 输出 JSON
+                await context.Response.WriteAsync(SerializeToJson(allTimelines));
+                break;
             // 操作作业
             case "/operate-job":
                 // 获取作业 Id
@@ -268,7 +278,7 @@ public sealed class ScheduleUIMiddleware
             // 推送更新
             case "/check-change":
                 // 检查请求类型，是否为 text/event-stream 格式
-                if (!context.WebSockets.IsWebSocketRequest && context.Request.Headers["Accept"].ToString().Contains("text/event-stream"))
+                if (!context.WebSockets.IsWebSocketRequest && context.Request.Headers.Accept.ToString().Contains("text/event-stream"))
                 {
                     // 设置响应头的 content-type 为 text/event-stream
                     context.Response.ContentType = "text/event-stream";

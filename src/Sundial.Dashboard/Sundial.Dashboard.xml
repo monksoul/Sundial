@@ -120,14 +120,34 @@
             是否默认展开所有作业
             </summary>
         </member>
-        <member name="P:Sundial.ScheduleUIOptions.LoginHandle">
+        <member name="F:Sundial.ScheduleUIOptions.LoginConfig">
             <summary>
-            登录逻辑
+            登录配置
             </summary>
         </member>
-        <member name="P:Sundial.ScheduleUIOptions.LoginSessionKey">
+        <member name="T:Sundial.LoginConfig">
+            <summary>
+            Schedule UI 登录配置
+            </summary>
+        </member>
+        <member name="P:Sundial.LoginConfig.SessionKey">
             <summary>
             客户端存储的 SessionKey
+            </summary>
+        </member>
+        <member name="P:Sundial.LoginConfig.DefaultUsername">
+            <summary>
+            默认登录名
+            </summary>
+        </member>
+        <member name="P:Sundial.LoginConfig.DefaultPassword">
+            <summary>
+            默认登录密码
+            </summary>
+        </member>
+        <member name="P:Sundial.LoginConfig.OnLoging">
+            <summary>
+            登录逻辑
             </summary>
         </member>
     </members>

@@ -55,15 +55,36 @@ public sealed class ScheduleUIOptions
     public bool DefaultExpandAllJobs { get; set; } = false;
 
     /// <summary>
-    /// 登录逻辑
+    /// 登录配置
     /// </summary>
-    public Func<string, string, HttpContext, Task<bool>> LoginHandle { get; set; } = (username, password, httpContext) =>
-    {
-        return Task.FromResult(username == "schedule" && string.IsNullOrWhiteSpace(password));
-    };
+    public LoginConfig LoginConfig = new();
+}
 
+/// <summary>
+/// Schedule UI 登录配置
+/// </summary>
+public sealed class LoginConfig
+{
     /// <summary>
     /// 客户端存储的 SessionKey
     /// </summary>
-    public string LoginSessionKey { get; set; } = "schedule_session_key";
+    public string SessionKey { get; set; } = "schedule_session_key";
+
+    /// <summary>
+    /// 默认登录名
+    /// </summary>
+    public string DefaultUsername { get; set; }
+
+    /// <summary>
+    /// 默认登录密码
+    /// </summary>
+    public string DefaultPassword { get; set; }
+
+    /// <summary>
+    /// 登录逻辑
+    /// </summary>
+    public Func<string, string, HttpContext, Task<bool>> OnLoging { get; set; } = (username, password, httpContext) =>
+    {
+        return Task.FromResult(username == "schedule" && string.IsNullOrWhiteSpace(password));
+    };
 }

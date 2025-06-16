@@ -13,6 +13,9 @@ builder.Services.AddSchedule(options =>
 var app = builder.Build();
 
 app.UseStaticFiles();
-app.UseScheduleUI();
+app.UseScheduleUI(options =>
+{
+    options.LoginConfig.DefaultUsername = "schedule";
+});
 
 app.Run();

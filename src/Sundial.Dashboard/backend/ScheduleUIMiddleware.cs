@@ -101,7 +101,9 @@ public sealed class ScheduleUIMiddleware
                              .Replace("%(DefaultExpandAllJobs)", Options.DefaultExpandAllJobs ? "true" : "false")
                              .Replace("%(UseUtcTimestamp)", ScheduleOptionsBuilder.UseUtcTimestampProperty ? "true" : "false")
                              .Replace("%(Title)", Options.Title ?? string.Empty)
-                             .Replace("%(LoginSessionKey)", Options.LoginSessionKey ?? "schedule_session_key");
+                             .Replace("%(Login.SessionKey)", Options.LoginConfig?.SessionKey ?? "schedule_session_key")
+                             .Replace("%(Login.DefaultUsername)", Options.LoginConfig?.DefaultUsername ?? string.Empty)
+                             .Replace("%(Login.DefaultPassword)", Options.LoginConfig?.DefaultPassword ?? string.Empty);
             }
 
             // 输出到客户端
@@ -327,7 +329,7 @@ public sealed class ScheduleUIMiddleware
                 try
                 {
                     // 调用自定义验证逻辑
-                    if (Options.LoginHandle is not null && await Options.LoginHandle(username, password, context))
+                    if (Options.LoginConfig?.OnLoging is not null && await Options.LoginConfig.OnLoging(username, password, context))
                     {
                         context.Response.StatusCode = StatusCodes.Status200OK;
                         await context.Response.WriteAsync("OK");

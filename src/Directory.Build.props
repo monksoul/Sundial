@@ -1,6 +1,8 @@
 <Project>
 	<PropertyGroup>
-		<TargetFrameworks>net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
+		<LangVersion>preview</LangVersion>
+		<Version>2.90</Version>
+		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<IncludeSymbols>true</IncludeSymbols>
@@ -29,6 +31,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<None Include="..\Directory.Build.props" Pack="true" PackagePath="\"/>
 		<None Include="..\..\README.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>
 

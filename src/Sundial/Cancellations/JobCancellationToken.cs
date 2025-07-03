@@ -86,8 +86,11 @@ internal sealed class JobCancellationToken : IJobCancellationToken
                     }
                 }
             }
-            catch (TaskCanceledException) { }
-            catch (AggregateException ex) when (ex.InnerExceptions.Count == 1 && ex.InnerExceptions[0] is TaskCanceledException) { }
+            catch (OperationCanceledException) { }
+            catch (Exception ex) when (!(ex is OperationCanceledException ||
+                ex is ObjectDisposedException ||
+                (ex is AggregateException aggEx && aggEx.InnerExceptions.All(e => e is OperationCanceledException || e is ObjectDisposedException))))
+            { }
             catch { }
         }
     }

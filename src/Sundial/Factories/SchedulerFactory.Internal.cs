@@ -14,11 +14,6 @@ namespace Sundial;
 internal sealed partial class SchedulerFactory : ISchedulerFactory
 {
     /// <summary>
-    /// 取消作业调度器休眠状态并发锁
-    /// </summary>
-    private readonly object _lock = new();
-
-    /// <summary>
     /// 作业计划变更通知
     /// </summary>
     public event EventHandler<SchedulerEventArgs> OnChanged;
@@ -281,13 +276,11 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
         catch (Exception ex)
         {
             // 输出非任务取消异常日志
-            if (!(ex is TaskCanceledException || (ex is AggregateException aggEx && aggEx.InnerExceptions.Count == 1 && aggEx.InnerExceptions[0] is TaskCanceledException)))
+            if (!(ex is OperationCanceledException || (ex is AggregateException aggEx && aggEx.InnerExceptions.Count == 1 && aggEx.InnerExceptions[0] is TaskCanceledException)))
             {
                 _logger.LogError(ex, ex.Message);
             }
-        }
-        finally
-        {
+
             // 重新初始化作业调度器取消休眠 Token
             CreateCancellationTokenSource();
         }
@@ -298,25 +291,21 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
     /// </summary>
     public void CancelSleep()
     {
-        lock (_lock)
+        try
         {
-            try
-            {
-                // 取消休眠，如果存在错误立即抛出
-                _sleepCancellationTokenSource.Cancel(true);
-            }
-            // 非任务取消异常日志
-            catch (Exception ex) when (!(ex is OperationCanceledException ||
-                ex is ObjectDisposedException ||
-                (ex is AggregateException aggEx && aggEx.InnerExceptions.All(e => e is OperationCanceledException || e is ObjectDisposedException))))
+            // 取消休眠，如果存在错误立即抛出
+            _sleepCancellationTokenSource.Cancel(true);
+        }
+        catch (Exception ex)
+        {
+            // 输出非任务取消异常日志
+            if (!(ex is OperationCanceledException || (ex is AggregateException aggEx && aggEx.InnerExceptions.Count == 1 && aggEx.InnerExceptions[0] is TaskCanceledException)))
             {
                 _logger.LogError(ex, $"Error canceling sleep. {ex.Message}");
             }
-            finally
-            {
-                // 重新初始化作业调度器取消休眠 Token
-                CreateCancellationTokenSource();
-            }
+
+            // 重新初始化作业调度器取消休眠 Token
+            CreateCancellationTokenSource();
         }
     }
 

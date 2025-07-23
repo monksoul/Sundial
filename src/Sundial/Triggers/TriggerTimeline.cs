@@ -68,7 +68,7 @@ public sealed class TriggerTimeline : IDisposable
     /// <summary>
     /// 触发模式
     /// </summary>
-    /// <remarks>默认为定时触发，0:定时，1：手动</remarks>
+    /// <remarks>默认为定时触发，0:定时，1:手动</remarks>
     [JsonInclude]
     public int Mode { get; internal set; }
 

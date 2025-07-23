@@ -161,7 +161,7 @@ public sealed class ScheduleOptionsBuilder
     public ScheduleOptionsBuilder AddJob(params SchedulerBuilder[] schedulerBuilders)
     {
         // 空检查
-        if (schedulerBuilders == null || schedulerBuilders.Length == 0) throw new ArgumentNullException(nameof(schedulerBuilders));
+        if (schedulerBuilders == null) throw new ArgumentNullException(nameof(schedulerBuilders));
 
         // 逐条将作业计划构建器添加到集合中
         foreach (var schedulerBuilder in schedulerBuilders)

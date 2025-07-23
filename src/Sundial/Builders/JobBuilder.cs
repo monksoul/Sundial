@@ -376,6 +376,15 @@ public sealed class JobBuilder : JobDetail
     }
 
     /// <summary>
+    /// 检查是否是临时作业
+    /// </summary>
+    /// <returns><see cref="bool"/></returns>
+    public bool CheckIsTemporary()
+    {
+        return Temporary;
+    }
+
+    /// <summary>
     /// 构建 <see cref="JobDetail"/> 对象
     /// </summary>
     /// <returns><see cref="JobDetail"/></returns>

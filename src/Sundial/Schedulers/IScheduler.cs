@@ -258,7 +258,7 @@ public interface IScheduler
     Dictionary<JobDetail, Trigger> GetEnumerable();
 
     /// <summary>
-    /// 立即执行作业
+    /// 手动执行作业
     /// </summary>
     /// <param name="triggerId">作业触发器 Id</param>
     void Run(string triggerId = null);

@@ -202,7 +202,7 @@ public sealed class ScheduleUIMiddleware
                     case "remove":
                         _schedulerFactory.RemoveJob(jobId);
                         break;
-                    // 立即执行
+                    // 手动执行
                     case "run":
                         _schedulerFactory.RunJob(jobId);
                         break;
@@ -255,7 +255,7 @@ public sealed class ScheduleUIMiddleware
                     case "remove":
                         scheduler1?.RemoveTrigger(triggerId);
                         break;
-                    // 立即执行
+                    // 手动执行
                     case "run":
                         scheduler1?.Run(triggerId);
                         break;

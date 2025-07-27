@@ -371,14 +371,14 @@ internal sealed class ScheduleHostedService : BackgroundService
                             // 记录作业触发器运行信息
                             await trigger.RecordTimelineAsync(_schedulerFactory, jobId, executionException?.ToString());
 
-                            // 重置触发模式：0:定时，1:手动
-                            trigger.Mode = 0;
-
-                            // 处理临时作业，执行完成后移除
-                            if (jobDetail.Temporary)
+                            // 处理临时作业，执行完成后移除（手动执行不会移除）
+                            if (jobDetail.Temporary && trigger.Mode == 0)
                             {
                                 scheduler.Remove();
                             }
+
+                            // 重置触发模式：0:定时，1:手动
+                            trigger.Mode = 0;
 
                             // 清空存储作业执行过程中传递的数据
                             jobExecutingContext.Items?.Clear();

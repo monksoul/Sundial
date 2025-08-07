@@ -140,6 +140,9 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
         // 标记是否启用作业持久化
         var isSetPersistence = Persistence is not null;
 
+        // 记录保存失败的作业个数
+        var failCount = 0;
+
         try
         {
             // 获取持久化预设的作业计划
@@ -164,7 +167,18 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
                         schedulerBuilderObj = await Persistence.OnLoadingAsync(schedulerBuilder, stoppingToken);
                     }
 
-                    _ = TrySaveJob(schedulerBuilderObj ?? schedulerBuilder, out _, false);
+                    schedulerBuilderObj ??= schedulerBuilder;
+
+                    // 出现异常不应终止循环
+                    try
+                    {
+                        _ = TrySaveJob(schedulerBuilderObj, out _, false);
+                    }
+                    catch (Exception ex)
+                    {
+                        failCount++;
+                        _logger.LogError(ex, "The scheduler of <{JobId}> appended failed.", schedulerBuilderObj.JobBuilder.JobId);
+                    }
                 }
             }
         }
@@ -182,7 +196,18 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
         GCCollect();
 
         // 输出作业调度器初始化日志
-        if (preloadSucceed) _logger.LogWarning("Schedule hosted service preload completed, and a total of <{Count}> schedulers are appended.", _schedulers.Count);
+        if (preloadSucceed)
+        {
+            // 输出保存失败作业的总数信息
+            if (failCount > 0)
+            {
+                _logger.LogError(new InvalidDataException($"A total of <{failCount}> failed to be appended."), "Schedule hosted service preload completed, and a total of <{Count}> schedulers are appended.", _schedulers.Count);
+            }
+            else
+            {
+                _logger.LogWarning("Schedule hosted service preload completed, and a total of <{Count}> schedulers are appended.", _schedulers.Count);
+            }
+        }
     }
 
     /// <summary>

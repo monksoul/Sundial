@@ -13,9 +13,10 @@ public sealed class HourlyAtAttribute : CronAttribute
     /// <summary>
     /// 构造函数
     /// </summary>
+    /// <param name="field">字段值</param>
     /// <param name="fields">字段值</param>
-    public HourlyAtAttribute(params object[] fields)
-        : base("@hourly", fields)
+    public HourlyAtAttribute(object field, params object[] fields)
+        : base("@hourly", new[] { field }.Concat(fields).ToArray())
     {
     }
 }

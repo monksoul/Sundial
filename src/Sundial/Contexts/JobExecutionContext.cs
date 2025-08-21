@@ -2,6 +2,8 @@
 //
 // 此源代码遵循位于源代码树根目录中的 LICENSE 文件的许可证。
 
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Sundial;
 
 /// <summary>
@@ -122,6 +124,32 @@ public abstract class JobExecutionContext
     public T GetItem<T>()
     {
         return GetItems<T>().FirstOrDefault();
+    }
+
+    /// <summary>
+    /// 检查作业任务是否处于正常状态
+    /// </summary>
+    /// <param name="schedulerFactory"><see cref="ISchedulerFactory"/></param>
+    /// <returns><see cref="bool"/></returns>
+    public bool IsNormalStatus(ISchedulerFactory schedulerFactory = null)
+    {
+        // 解析作业计划工厂服务
+        schedulerFactory ??= ServiceProvider.GetRequiredService<ISchedulerFactory>();
+
+        // 情况 1：检查作业是否存在
+        if (schedulerFactory.TryGetJob(JobId, out var scheduler) != ScheduleResult.Succeed)
+        {
+            return false;
+        }
+
+        // 情况 2：检查作业触发器是否存在
+        if (scheduler.TryGetTrigger(TriggerId, out var trigger) != ScheduleResult.Succeed)
+        {
+            return false;
+        }
+
+        // 情况 3：检查作业触发器是否正常运行
+        return trigger.IsNormalStatus();
     }
 
     /// <summary>

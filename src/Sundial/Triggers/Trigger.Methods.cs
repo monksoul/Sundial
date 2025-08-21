@@ -347,9 +347,19 @@ public partial class Trigger
         // 调用事件委托（记录作业触发器运行信息）
         if (schedulerFactory is SchedulerFactory schedulerFactoryInstance)
         {
+            // 获取作业计划
+            var scheduler = schedulerFactoryInstance.GetJob(jobId);
+            if (scheduler is null)
+            {
+                Timelines.Clear();
+                Timelines = null;
+
+                return;
+            }
+
             // 初始化作业执行记录持久上下文
             var context = new PersistenceExecutionRecordContext(
-                schedulerFactoryInstance.GetJob(jobId).GetJobDetail()
+                scheduler.GetJobDetail()
                 , this
                 , timeline.Mode
                 , timeline);

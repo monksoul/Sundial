@@ -253,7 +253,8 @@ internal sealed class ScheduleHostedService : BackgroundService
                                 {
                                     // 输出重试日志
                                     _logger.LogWarning("Retrying {times}/{total} times for {jobExecutingContext}", times, total, jobExecutingContext);
-                                });
+                                }
+                                , shouldExit: () => !jobExecutingContext.IsNormalStatus(_schedulerFactory)); // 处理作业或触发器不正常的情况
                             }
                             else
                             {

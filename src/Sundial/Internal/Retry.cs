@@ -19,13 +19,15 @@ public sealed class Retry
     /// <param name="exceptionTypes">异常类型,可多个</param>
     /// <param name="fallbackPolicy">重试失败回调</param>
     /// <param name="retryAction">重试时调用方法</param>
+    /// <param name="shouldExit">退出条件</param>
     public static void Invoke(Action action
         , int numRetries
         , int retryTimeout = 1000
         , bool finalThrow = true
         , Type[] exceptionTypes = default
         , Action<Exception> fallbackPolicy = default
-        , Action<int, int> retryAction = default)
+        , Action<int, int> retryAction = default
+        , Func<bool> shouldExit = default)
     {
         if (action == null) throw new ArgumentNullException(nameof(action));
 
@@ -38,7 +40,7 @@ public sealed class Retry
         {
             fallbackPolicy?.Invoke(ex);
             await Task.CompletedTask;
-        }, retryAction).GetAwaiter().GetResult();
+        }, retryAction, shouldExit).GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -51,6 +53,7 @@ public sealed class Retry
     /// <param name="exceptionTypes">异常类型,可多个</param>
     /// <param name="fallbackPolicy">重试失败回调</param>
     /// <param name="retryAction">重试时调用方法</param>
+    /// <param name="shouldExit">退出条件</param>
     /// <returns><see cref="Task"/></returns>
     public static async Task InvokeAsync(Func<Task> action
         , int numRetries
@@ -58,7 +61,8 @@ public sealed class Retry
         , bool finalThrow = true
         , Type[] exceptionTypes = default
         , Func<Exception, Task> fallbackPolicy = default
-        , Action<int, int> retryAction = default)
+        , Action<int, int> retryAction = default
+        , Func<bool> shouldExit = default)
     {
         if (action == null) throw new ArgumentNullException(nameof(action));
 
@@ -109,6 +113,12 @@ public sealed class Retry
 
                 // 如果可重试异常数大于 0，则间隔指定时间后继续执行
                 if (retryTimeout > 0) await Task.Delay(retryTimeout);
+
+                // 处理退出机制
+                if (shouldExit != null && shouldExit())
+                {
+                    return;
+                }
             }
         }
     }

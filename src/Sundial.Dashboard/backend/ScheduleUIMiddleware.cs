@@ -287,7 +287,6 @@ public sealed class ScheduleUIMiddleware
 
                     // 设置响应头，启用响应发送保持活动性
                     context.Response.Headers.CacheControl = "no-cache";
-                    context.Response.Headers.Connection = "keep-alive";
 
                     // 防止 Nginx 缓存 Server-Sent Events
                     context.Response.Headers["X-Accel-Buffering"] = "no";

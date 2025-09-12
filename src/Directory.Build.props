@@ -1,7 +1,7 @@
 <Project>
 	<PropertyGroup>
 		<LangVersion>preview</LangVersion>
-		<Version>2.98</Version>
+		<Version>2.99</Version>
 		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>

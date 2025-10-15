@@ -464,7 +464,7 @@ internal sealed class ScheduleHostedService : BackgroundService
             _schedulerFactory.Shorthand(jobDetail, trigger);
 
             // 输出阻塞日志
-            _logger.LogWarning("{occurrenceTime}: The <{TriggerId}> trigger of job <{JobId}> failed to execute as scheduled due to blocking.", occurrenceTime, trigger.TriggerId, jobDetail.JobId);
+            _logger.LogWarning("{occurrenceTime}: The <{TriggerId}> trigger for job <{JobId}> was skipped as the job is configured for serial execution and a previous instance is still running.", occurrenceTime, trigger.TriggerId, jobDetail.JobId);
 
             return true;
         }

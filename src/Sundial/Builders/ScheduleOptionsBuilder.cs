@@ -144,11 +144,16 @@ public sealed class ScheduleOptionsBuilder
         // 设置当前作业组名称（理应不存在并发问题，若有添加 lock）
         _groupSet = groupSet;
 
-        // 调用设置
-        setAction();
-
-        // 清空当前作业组名称
-        _groupSet = null;
+        try
+        {
+            // 调用设置
+            setAction();
+        }
+        finally
+        {
+            // 清空当前作业组名称
+            _groupSet = null;
+        }
 
         return this;
     }

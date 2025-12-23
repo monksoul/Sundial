@@ -46,7 +46,7 @@ public class CronTrigger : Trigger
     /// </summary>
     /// <param name="startAt">起始时间</param>
     /// <returns><see cref="DateTime"/></returns>
-    public override DateTime GetNextOccurrence(DateTime startAt)
+    public override DateTime? GetNextOccurrence(DateTime startAt)
     {
         return Crontab.GetNextOccurrence(startAt);
     }

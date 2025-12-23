@@ -16,7 +16,7 @@ public partial class Trigger
     /// </summary>
     /// <param name="startAt">起始时间</param>
     /// <returns><see cref="DateTime"/></returns>
-    public virtual DateTime GetNextOccurrence(DateTime startAt) => throw new NotImplementedException();
+    public virtual DateTime? GetNextOccurrence(DateTime startAt) => throw new NotImplementedException();
 
     /// <summary>
     /// 执行条件检查

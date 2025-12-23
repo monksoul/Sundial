@@ -31,7 +31,7 @@ public class PeriodTrigger : Trigger
     /// </summary>
     /// <param name="startAt">起始时间</param>
     /// <returns><see cref="DateTime"/></returns>
-    public override DateTime GetNextOccurrence(DateTime startAt)
+    public override DateTime? GetNextOccurrence(DateTime startAt)
     {
         // 获取间隔触发器周期计算基准时间
         var baseTime = StartTime == null ? startAt : StartTime.Value;

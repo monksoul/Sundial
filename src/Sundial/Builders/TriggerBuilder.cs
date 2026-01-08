@@ -310,6 +310,12 @@ public sealed partial class TriggerBuilder : Trigger
         // 空检查
         if (string.IsNullOrWhiteSpace(args) || args == "[]") args = null;
 
+        // 解决修改了触发器参数没有更新下一次运行时间问题
+        if (args != Args)
+        {
+            SetNextRunTime(Penetrates.GetNowTime().AddSeconds(-1));
+        }
+
         Args = args;
         if (args == null) return this;
 
@@ -323,9 +329,6 @@ public sealed partial class TriggerBuilder : Trigger
         }
 
         RuntimeTriggerArgs = runtimeArgs;
-
-        // 解决修改了触发器参数没有更新下一次运行时间问题
-        SetNextRunTime(Penetrates.GetNowTime().AddSeconds(-1));
 
         return this;
     }

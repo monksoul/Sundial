@@ -11,7 +11,7 @@ using Sundial;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// Schedule 模块 UI 中间件拓展
+/// Schedule 模块 UI 中间件扩展
 /// </summary>
 public static class ScheduleUIExtensions
 {

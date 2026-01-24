@@ -10,7 +10,7 @@ using System.Reflection;
 namespace Sundial;
 
 /// <summary>
-/// Schedule 模块拓展类
+/// Schedule 模块扩展类
 /// </summary>
 public static class ScheduleExtensions
 {

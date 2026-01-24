@@ -1,7 +1,7 @@
 <Project>
 	<PropertyGroup>
 		<LangVersion>preview</LangVersion>
-		<Version>2.202</Version>
+		<Version>2.203</Version>
 		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -9,7 +9,7 @@
 		<Authors>百小僧</Authors>
 		<Company>百签科技（广东）有限公司</Company>
 		<Product>Sundial</Product>
-		<Copyright>© 2020-2025 百小僧及百签科技（广东）有限公司</Copyright>
+		<Copyright>© 2020-2026 百小僧及百签科技（广东）有限公司</Copyright>
 		<RepositoryUrl>https://gitee.com/dotnetchina/Sundial</RepositoryUrl>
 		<RepositoryType>Gitee</RepositoryType>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>

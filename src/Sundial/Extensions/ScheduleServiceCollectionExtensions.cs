@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Schedule 模块服务拓展
+/// Schedule 模块服务扩展
 /// </summary>
 public static class ScheduleServiceCollectionExtensions
 {

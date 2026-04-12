@@ -58,6 +58,22 @@ public partial class JobDetail
     {
         var value = GetProperty(key);
         if (value == null) return default;
+
+        // 处理类型匹配类型
+        if (value is T typed) return typed;
+
+        // 处理字符串类型
+        if (typeof(T) == typeof(string))
+        {
+            return value is string strValue ? (T)(object)strValue : (T)(object)value.ToString();
+        }
+
+        // 简单处理引用类型的转换
+        if (typeof(T).IsClass && typeof(T) != typeof(string))
+        {
+            return Penetrates.Deserialize<T>(Penetrates.Serialize(value));
+        }
+
         return (T)value;
     }
 

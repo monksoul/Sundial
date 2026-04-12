@@ -16,8 +16,26 @@ public sealed class JobDetailAttribute : Attribute
     /// <summary>
     /// 构造函数
     /// </summary>
+    public JobDetailAttribute()
+    {
+    }
+
+    /// <summary>
+    /// 构造函数
+    /// </summary>
+    /// <param name="concurrent">并行/串行</param>
+    public JobDetailAttribute(bool concurrent)
+        : this()
+    {
+        Concurrent = concurrent;
+    }
+
+    /// <summary>
+    /// 构造函数
+    /// </summary>
     /// <param name="jobId">作业 Id</param>
     public JobDetailAttribute(string jobId)
+        : this()
     {
         JobId = jobId;
     }

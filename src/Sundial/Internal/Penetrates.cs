@@ -234,6 +234,19 @@ internal static class Penetrates
     {
         if (value == null || value is not JsonElement ele) return value;
 
+        // 处理 Object 类型的值
+        if (ele.ValueKind == JsonValueKind.Object)
+        {
+            var dict = new Dictionary<string, object>(StringComparer.Ordinal);
+            foreach (var prop in ele.EnumerateObject())
+            {
+                // 递归处理
+                dict[prop.Name] = GetJsonElementValue(prop.Value);
+            }
+
+            return dict;
+        }
+
         // 处理 Array 类型的值
         if (ele.ValueKind == JsonValueKind.Array)
         {

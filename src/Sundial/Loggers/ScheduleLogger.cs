@@ -124,8 +124,8 @@ internal class ScheduleLogger : IScheduleLogger
     /// <param name="ex">异常</param>
     public void Log(LogLevel logLevel, string message, object[] args = default, Exception ex = default)
     {
-        // 如果未启用日志记录则直接返回
-        if (!LogEnabled) return;
+        // 如果未启用并且没有发生异常，那么跳过日志记录
+        if (!LogEnabled && ex is null) return;
 
         // 检查是否注册了日志输出程序
         if (_isLoggingRegistered)

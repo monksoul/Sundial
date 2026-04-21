@@ -88,7 +88,7 @@ public partial class JobDetail
     /// <summary>
     /// 作业信息额外数据运行时实例
     /// </summary>
-    internal Dictionary<string, object> RuntimeProperties { get; set; } = new();
+    internal Dictionary<string, object> RuntimeProperties { get; set; } = [];
 
     /// <summary>
     /// 运行时动态作业执行逻辑

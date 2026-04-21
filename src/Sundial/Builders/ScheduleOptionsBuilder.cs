@@ -15,7 +15,7 @@ public sealed class ScheduleOptionsBuilder
     /// <summary>
     /// 作业计划构建器集合
     /// </summary>
-    private readonly List<SchedulerBuilder> _schedulerBuilders = new();
+    private readonly List<SchedulerBuilder> _schedulerBuilders = [];
 
     /// <summary>
     /// 作业处理程序监视器
@@ -139,7 +139,7 @@ public sealed class ScheduleOptionsBuilder
     {
         // 空检查
         if (string.IsNullOrWhiteSpace(groupSet)) throw new ArgumentNullException(nameof(groupSet));
-        if (setAction is null) throw new ArgumentNullException(nameof(setAction));
+        ArgumentNullException.ThrowIfNull(setAction);
 
         // 设置当前作业组名称（理应不存在并发问题，若有添加 lock）
         _groupSet = groupSet;
@@ -166,7 +166,7 @@ public sealed class ScheduleOptionsBuilder
     public ScheduleOptionsBuilder AddJob(params SchedulerBuilder[] schedulerBuilders)
     {
         // 空检查
-        if (schedulerBuilders == null) throw new ArgumentNullException(nameof(schedulerBuilders));
+        ArgumentNullException.ThrowIfNull(schedulerBuilders);
 
         // 逐条将作业计划构建器添加到集合中
         foreach (var schedulerBuilder in schedulerBuilders)
@@ -469,10 +469,10 @@ public sealed class ScheduleOptionsBuilder
     private ScheduleOptionsBuilder AddHttpJob(Action<HttpJobMessage> buildMessage, SchedulerBuilder schedulerBuilder)
     {
         // 空检查
-        if (buildMessage == null) throw new ArgumentNullException(nameof(buildMessage));
+        ArgumentNullException.ThrowIfNull(buildMessage);
 
         // 空检查
-        if (schedulerBuilder == null) throw new ArgumentNullException(nameof(schedulerBuilder));
+        ArgumentNullException.ThrowIfNull(schedulerBuilder);
 
         // 创建 HTTP 作业消息
         var httpJobMessage = new HttpJobMessage();

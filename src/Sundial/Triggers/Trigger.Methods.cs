@@ -628,8 +628,8 @@ WHERE {Penetrates.WrapDatabaseFieldName(columnNames[0])} = {Penetrates.GetNoNumb
     /// <returns><see cref="string"/></returns>
     public string ConvertToMonitor(NamingConventions naming = NamingConventions.CamelCase)
     {
-        return TP.Wrapper(nameof(Trigger), Description ?? TriggerType, new[]
-        {
+        return TP.Wrapper(nameof(Trigger), Description ?? TriggerType,
+        [
             $"##{Penetrates.GetNaming(nameof(TriggerId), naming)}## {TriggerId}"
             , $"##{Penetrates.GetNaming(nameof(JobId), naming)}## {JobId}"
             , $"##{Penetrates.GetNaming(nameof(TriggerType), naming)}## {TriggerType}"
@@ -653,6 +653,6 @@ WHERE {Penetrates.WrapDatabaseFieldName(columnNames[0])} = {Penetrates.GetNoNumb
             , $"##{Penetrates.GetNaming(nameof(Result), naming)}## {Result}"
             , $"##{Penetrates.GetNaming(nameof(ElapsedTime), naming)}## {ElapsedTime}"
             , $"##{Penetrates.GetNaming(nameof(UpdatedTime), naming)}## {UpdatedTime.ToFormatString()}"
-        });
+        ]);
     }
 }

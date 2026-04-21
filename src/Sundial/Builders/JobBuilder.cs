@@ -324,7 +324,7 @@ public sealed class JobBuilder : JobDetail
     /// <returns><see cref="JobBuilder"/></returns>
     public JobBuilder SetProperties(Dictionary<string, object> properties)
     {
-        properties ??= new();
+        properties ??= [];
 
         Properties = Penetrates.Serialize(properties);
         RuntimeProperties = properties;

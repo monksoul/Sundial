@@ -105,7 +105,7 @@ public static class ScheduleExtensions
     public static TriggerBuilder[] ScanTriggers(this Type jobType)
     {
         // 空检查
-        if (jobType == null) throw new ArgumentNullException(nameof(jobType));
+        ArgumentNullException.ThrowIfNull(jobType);
 
         // 检查 jobType 类型是否实现 IJob 接口
         if (!jobType.IsJobType()) throw new InvalidOperationException($"The <{jobType.Name}> does not implement IJob interface.");

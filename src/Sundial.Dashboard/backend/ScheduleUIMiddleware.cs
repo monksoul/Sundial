@@ -262,7 +262,7 @@ public sealed class ScheduleUIMiddleware
                     // 获取作业触发器最近运行时间
                     case "timelines":
                         var trigger = scheduler1?.GetTrigger(triggerId);
-                        var timelines = trigger?.GetTimelines() ?? Array.Empty<TriggerTimeline>();
+                        var timelines = trigger?.GetTimelines() ?? [];
 
                         // 输出 JSON
                         await context.Response.WriteAsync(SerializeToJson(timelines));
@@ -298,7 +298,7 @@ public sealed class ScheduleUIMiddleware
                     {
                         if (!queue.IsAddingCompleted)
                         {
-                            queue.Add(args.JobDetail);
+                            queue.TryAdd(args.JobDetail);
                         }
                     }
                     _schedulerFactory.OnChanged += Subscribe;

@@ -107,7 +107,7 @@ internal class ScheduleLogger : IScheduleLogger
     /// <summary>
     /// 获取结构化日志输出元数据
     /// </summary>
-    internal static Lazy<Tuple<Type, MethodInfo>> _LogValuesFormatterMetadata = new Lazy<Tuple<Type, MethodInfo>>(() =>
+    internal static Lazy<Tuple<Type, MethodInfo>> _LogValuesFormatterMetadata = new(() =>
     {
         var logValuesFormatterType = Type.GetType("Microsoft.Extensions.Logging.LogValuesFormatter, Microsoft.Extensions.Logging.Abstractions");
         var formatMethod = logValuesFormatterType.GetMethod("Format", BindingFlags.Public | BindingFlags.Instance);
@@ -135,7 +135,7 @@ internal class ScheduleLogger : IScheduleLogger
         else
         {
             var (logValuesFormatterType, formatMethod) = _LogValuesFormatterMetadata.Value;
-            var formatMessage = formatMethod.Invoke(Activator.CreateInstance(logValuesFormatterType, [message]), new object[] { args });
+            var formatMessage = formatMethod.Invoke(Activator.CreateInstance(logValuesFormatterType, [message]), [args]);
 
             Console.WriteLine(formatMessage);
         }

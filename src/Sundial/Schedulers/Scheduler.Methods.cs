@@ -110,7 +110,7 @@ internal sealed partial class Scheduler
     public ScheduleResult TrySaveTrigger(TriggerBuilder triggerBuilder, out Trigger trigger, bool immediately = true)
     {
         // 空检查
-        if (triggerBuilder == null) throw new ArgumentNullException(nameof(triggerBuilder));
+        ArgumentNullException.ThrowIfNull(triggerBuilder);
 
         // 解析作业触发器构建器状态
         var isAppended = triggerBuilder.Behavior == PersistenceBehavior.Appended;
@@ -194,7 +194,7 @@ internal sealed partial class Scheduler
     public ScheduleResult TryUpdateDetail(JobBuilder jobBuilder, out JobDetail jobDetail)
     {
         // 空检查
-        if (jobBuilder == null) throw new ArgumentNullException(nameof(jobBuilder));
+        ArgumentNullException.ThrowIfNull(jobBuilder);
 
         // 获取作业信息构建器
         var schedulerBuilder = GetBuilder();
@@ -266,7 +266,7 @@ internal sealed partial class Scheduler
     public void AddTrigger(params TriggerBuilder[] triggerBuilders)
     {
         // 空检查
-        if (triggerBuilders == null) throw new ArgumentNullException(nameof(triggerBuilders));
+        ArgumentNullException.ThrowIfNull(triggerBuilders);
 
         foreach (var triggerBuilder in triggerBuilders)
         {
@@ -292,7 +292,7 @@ internal sealed partial class Scheduler
     public void UpdateTrigger(params TriggerBuilder[] triggerBuilders)
     {
         // 空检查
-        if (triggerBuilders == null) throw new ArgumentNullException(nameof(triggerBuilders));
+        ArgumentNullException.ThrowIfNull(triggerBuilders);
 
         foreach (var triggerBuilder in triggerBuilders)
         {
@@ -388,7 +388,7 @@ internal sealed partial class Scheduler
     public bool StartTrigger(string triggerId, bool immediately = true)
     {
         var triggerBuilder = GetTriggerBuilder(triggerId);
-        if (triggerBuilder != null) triggerBuilder.StartNow = true;
+        triggerBuilder?.StartNow = true;
         triggerBuilder?.SetStatus(TriggerStatus.Ready);
 
         var succeed = TrySaveTrigger(triggerBuilder?.Updated(), out _, immediately) == ScheduleResult.Succeed;

@@ -47,7 +47,7 @@ internal sealed partial class Scheduler : IScheduler
     /// <summary>
     /// 作业触发器集合
     /// </summary>
-    internal Dictionary<string, Trigger> Triggers { get; private set; } = new();
+    internal Dictionary<string, Trigger> Triggers { get; private set; } = [];
 
     /// <summary>
     /// 作业计划工厂

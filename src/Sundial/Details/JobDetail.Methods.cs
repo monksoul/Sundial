@@ -338,8 +338,8 @@ WHERE {Penetrates.WrapDatabaseFieldName(columnNames[0])} = {Penetrates.GetNoNumb
     /// <returns><see cref="string"/></returns>
     public string ConvertToMonitor(NamingConventions naming = NamingConventions.CamelCase)
     {
-        return TP.Wrapper(nameof(JobDetail), Description ?? JobType, new[]
-        {
+        return TP.Wrapper(nameof(JobDetail), Description ?? JobType,
+        [
             $"##{Penetrates.GetNaming(nameof(JobId), naming)}## {JobId}"
             , $"##{Penetrates.GetNaming(nameof(GroupName), naming)}## {GroupName}"
             , $"##{Penetrates.GetNaming(nameof(JobType), naming)}## {JobType}"
@@ -349,6 +349,6 @@ WHERE {Penetrates.WrapDatabaseFieldName(columnNames[0])} = {Penetrates.GetNoNumb
             , $"##{Penetrates.GetNaming(nameof(IncludeAnnotations), naming)}## {IncludeAnnotations}"
             , $"##{Penetrates.GetNaming(nameof(Properties), naming)}## {Properties}"
             , $"##{Penetrates.GetNaming(nameof(UpdatedTime), naming)}## {UpdatedTime.ToFormatString()}"
-        });
+        ]);
     }
 }

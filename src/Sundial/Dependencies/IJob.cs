@@ -7,11 +7,19 @@ namespace Sundial;
 /// <summary>
 /// 作业处理程序
 /// </summary>
+/// <remarks>
+/// 严禁使用 <c>Thread.Sleep</c>、<c>.Result</c>、<c>.Wait()</c> 等同步阻塞调用！
+/// 请使用 <c>await Task.Delay()</c> 替代，否则将导致线程池饥饿与调度器假死。
+/// </remarks>
 public interface IJob
 {
     /// <summary>
     /// 具体处理逻辑
     /// </summary>
+    /// <remarks>
+    /// 严禁使用 <c>Thread.Sleep</c>、<c>.Result</c>、<c>.Wait()</c> 等同步阻塞调用！
+    /// 请使用 <c>await Task.Delay()</c> 替代，否则将导致线程池饥饿与调度器假死。
+    /// </remarks>
     /// <param name="context">作业执行前上下文</param>
     /// <param name="stoppingToken">取消任务 Token</param>
     /// <returns><see cref="Task"/></returns>

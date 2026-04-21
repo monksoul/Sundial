@@ -108,7 +108,7 @@ internal sealed partial class SchedulerFactory
     public ScheduleResult TrySaveJob(SchedulerBuilder schedulerBuilder, out IScheduler scheduler, bool immediately = true)
     {
         // 空检查
-        if (schedulerBuilder == null) throw new ArgumentNullException(nameof(schedulerBuilder));
+        ArgumentNullException.ThrowIfNull(schedulerBuilder);
 
         // 解析作业计划构建器状态
         var isAppended = schedulerBuilder.Behavior == PersistenceBehavior.Appended;
@@ -327,7 +327,7 @@ internal sealed partial class SchedulerFactory
     public void SaveJob(params SchedulerBuilder[] schedulerBuilders)
     {
         // 空检查
-        if (schedulerBuilders == null) throw new ArgumentNullException(nameof(schedulerBuilders));
+        ArgumentNullException.ThrowIfNull(schedulerBuilders);
 
         // 逐条将作业计划构建器保存到作业计划中
         foreach (var schedulerBuilder in schedulerBuilders)
@@ -345,7 +345,7 @@ internal sealed partial class SchedulerFactory
     {
         // 空检查
         if (string.IsNullOrWhiteSpace(groupSet)) throw new ArgumentNullException(nameof(groupSet));
-        if (setAction is null) throw new ArgumentNullException(nameof(setAction));
+        ArgumentNullException.ThrowIfNull(setAction);
 
         // 设置当前作业组名称（理应不存在并发问题，若有添加 lock）
         _groupSet = groupSet;
@@ -385,7 +385,7 @@ internal sealed partial class SchedulerFactory
     public void AddJob(params SchedulerBuilder[] schedulerBuilders)
     {
         // 空检查
-        if (schedulerBuilders == null) throw new ArgumentNullException(nameof(schedulerBuilders));
+        ArgumentNullException.ThrowIfNull(schedulerBuilders);
 
         // 逐条将作业计划构建器保存到作业计划中
         foreach (var schedulerBuilder in schedulerBuilders)
@@ -990,10 +990,10 @@ internal sealed partial class SchedulerFactory
     private ScheduleResult TryAddHttpJob(Action<HttpJobMessage> buildMessage, SchedulerBuilder schedulerBuilder, out IScheduler scheduler, bool immediately = true)
     {
         // 空检查
-        if (buildMessage == null) throw new ArgumentNullException(nameof(buildMessage));
+        ArgumentNullException.ThrowIfNull(buildMessage);
 
         // 空检查
-        if (schedulerBuilder == null) throw new ArgumentNullException(nameof(schedulerBuilder));
+        ArgumentNullException.ThrowIfNull(schedulerBuilder);
 
         // 创建 HTTP 作业消息
         var httpJobMessage = new HttpJobMessage();
@@ -1024,7 +1024,7 @@ internal sealed partial class SchedulerFactory
     public void UpdateJob(params SchedulerBuilder[] schedulerBuilders)
     {
         // 空检查
-        if (schedulerBuilders == null) throw new ArgumentNullException(nameof(schedulerBuilders));
+        ArgumentNullException.ThrowIfNull(schedulerBuilders);
 
         // 逐条将作业计划构建器保存到作业计划中
         foreach (var schedulerBuilder in schedulerBuilders)

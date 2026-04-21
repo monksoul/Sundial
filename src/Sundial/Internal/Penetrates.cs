@@ -100,11 +100,11 @@ internal static class Penetrates
     internal static string[] SplitToWords(string propertyName)
     {
         // 空检查
-        if (propertyName == null) return Array.Empty<string>();
+        if (propertyName == null) return [];
 
         // 处理包含空白问题
-        if (string.IsNullOrWhiteSpace(propertyName)) return new string[] { propertyName };
-        if (propertyName.Length == 1) return new string[] { propertyName };
+        if (string.IsNullOrWhiteSpace(propertyName)) return [propertyName];
+        if (propertyName.Length == 1) return [propertyName];
 
         return Regex.Split(propertyName, @"(?=\p{Lu}\p{Ll})|(?<=\p{Ll})(?=\p{Lu})")
             .Where(u => u.Length > 0)

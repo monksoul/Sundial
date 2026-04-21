@@ -94,7 +94,7 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
         _logger = logger;
         _jobCancellationToken = jobCancellationToken;
         _schedulerBuilders = schedulerBuilders;
-        _manualRunJobIds = new();
+        _manualRunJobIds = [];
 
         Persistence = _serviceProvider.GetService<IJobPersistence>();
 
@@ -153,7 +153,7 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
             }
 
             // 装载初始作业计划
-            var initialSchedulerBuilders = _schedulerBuilders.Concat(preloadSchedulerBuilders ?? Enumerable.Empty<SchedulerBuilder>());
+            var initialSchedulerBuilders = _schedulerBuilders.Concat(preloadSchedulerBuilders ?? []);
 
             // 如果作业调度器中包含作业计划构建器
             if (initialSchedulerBuilders.Any())
@@ -365,7 +365,7 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
         // 设置更新时间
         var nowTime = Penetrates.GetNowTime();
         jobDetail.UpdatedTime = nowTime;
-        if (trigger != null) trigger.UpdatedTime = nowTime;
+        trigger?.UpdatedTime = nowTime;
 
         // 空检查
         if (Persistence == null) return;
@@ -383,7 +383,7 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
                         Mode = trigger.Mode
                     };
 
-                _persistenceMessageQueue.Add(context);
+                _persistenceMessageQueue.TryAdd(context);
                 return;
             }
             catch (Exception ex)
@@ -482,7 +482,7 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
     private double? GetSleepMilliseconds(DateTime startAt)
     {
         // 空检查
-        if (!_schedulers.Any())
+        if (_schedulers.IsEmpty)
         {
             // 输出作业调度器休眠总时长和唤醒时间日志
             _logger.LogWarning("Schedule hosted service will sleep until it wakes up.");

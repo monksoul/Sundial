@@ -44,7 +44,7 @@ public sealed class SchedulerBuilder
     /// <summary>
     /// 作业触发器构建器集合
     /// </summary>
-    internal List<TriggerBuilder> TriggerBuilders { get; private set; } = new();
+    internal List<TriggerBuilder> TriggerBuilders { get; private set; } = [];
 
     /// <summary>
     /// 作业触发器数量
@@ -221,7 +221,7 @@ public sealed class SchedulerBuilder
     public static SchedulerBuilder Create(JobBuilder jobBuilder, params TriggerBuilder[] triggerBuilders)
     {
         // 空检查
-        if (jobBuilder == null) throw new ArgumentNullException(nameof(jobBuilder));
+        ArgumentNullException.ThrowIfNull(jobBuilder);
 
         // 创建作业计划构建器
         var schedulerBuilder = new SchedulerBuilder(jobBuilder);
@@ -293,7 +293,7 @@ public sealed class SchedulerBuilder
     public static SchedulerBuilder Clone(SchedulerBuilder fromSchedulerBuilder)
     {
         // 空检查
-        if (fromSchedulerBuilder == null) throw new ArgumentNullException(nameof(fromSchedulerBuilder));
+        ArgumentNullException.ThrowIfNull(fromSchedulerBuilder);
 
         return new SchedulerBuilder(JobBuilder.Clone(fromSchedulerBuilder.JobBuilder)
             , fromSchedulerBuilder.TriggerBuilders.Select(t => TriggerBuilder.Clone(t)).ToList())
@@ -339,7 +339,7 @@ public sealed class SchedulerBuilder
     public SchedulerBuilder UpdateJobBuilder(JobBuilder jobBuilder, bool replace = true)
     {
         // 空检查
-        if (jobBuilder == null) throw new ArgumentNullException(nameof(jobBuilder));
+        ArgumentNullException.ThrowIfNull(jobBuilder);
 
         jobBuilder.MapTo<JobBuilder>(JobBuilder, !replace);
 
@@ -358,7 +358,7 @@ public sealed class SchedulerBuilder
     public SchedulerBuilder AddTriggerBuilder(params TriggerBuilder[] triggerBuilders)
     {
         // 空检查
-        if (triggerBuilders == null) throw new ArgumentNullException(nameof(triggerBuilders));
+        ArgumentNullException.ThrowIfNull(triggerBuilders);
 
         foreach (var triggerBuilder in triggerBuilders)
         {
@@ -377,7 +377,7 @@ public sealed class SchedulerBuilder
     public SchedulerBuilder UpdateTriggerBuilder(TriggerBuilder triggerBuilder, bool replace = true)
     {
         // 空检查
-        if (triggerBuilder == null) throw new ArgumentNullException(nameof(triggerBuilder));
+        ArgumentNullException.ThrowIfNull(triggerBuilder);
 
         // 获取原来的作业触发器构建器
         var originTriggerBuilder = GetTriggerBuilder(triggerBuilder?.TriggerId);
@@ -401,7 +401,7 @@ public sealed class SchedulerBuilder
     public SchedulerBuilder UpdateTriggerBuilder(params TriggerBuilder[] triggerBuilders)
     {
         // 空检查
-        if (triggerBuilders == null) throw new ArgumentNullException(nameof(triggerBuilders));
+        ArgumentNullException.ThrowIfNull(triggerBuilders);
 
         foreach (var triggerBuilder in triggerBuilders)
         {

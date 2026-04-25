@@ -40,6 +40,16 @@
             作业计划工厂
             </summary>
         </member>
+        <member name="F:Sundial.ScheduleUIMiddleware._staticContentCache">
+            <summary>
+            静态资源缓存 Key
+            </summary>
+        </member>
+        <member name="F:Sundial.ScheduleUIMiddleware._jsonSerializerOptions">
+            <summary>
+            JSON 序列化选项
+            </summary>
+        </member>
         <member name="M:Sundial.ScheduleUIMiddleware.#ctor(Microsoft.AspNetCore.Http.RequestDelegate,Sundial.ISchedulerFactory,Sundial.ScheduleUIOptions)">
             <summary>
             构造函数

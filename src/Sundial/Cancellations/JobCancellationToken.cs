@@ -55,19 +55,26 @@ internal sealed class JobCancellationToken : IJobCancellationToken
         var containsTriggerId = !string.IsNullOrWhiteSpace(triggerId);
 
         // 获取所有以作业 Id 或作业 Id + 作业触发器 Id 开头的作业 TokenKey
-        var allJobKeys = _cancellationTokenSources.Keys
+        var keysToRemove = _cancellationTokenSources.Keys
             .Where(u => u.StartsWith(!containsTriggerId
                 ? $"{jobId}__"
-                : $"{jobId}__{triggerId}___"));
+                : $"{jobId}__{triggerId}___"))
+            .ToArray();
 
-        foreach (var tokenKey in allJobKeys)
+        foreach (var tokenKey in keysToRemove)
         {
             try
             {
                 if (_cancellationTokenSources.TryRemove(tokenKey, out var cancellationTokenSource))
                 {
-                    if (!cancellationTokenSource.IsCancellationRequested) cancellationTokenSource.Cancel();
-                    cancellationTokenSource.Dispose();
+                    try
+                    {
+                        if (!cancellationTokenSource.IsCancellationRequested) cancellationTokenSource.Cancel();
+                    }
+                    finally
+                    {
+                        cancellationTokenSource.Dispose();
+                    }
 
                     // 输出日志
                     if (outputLog)

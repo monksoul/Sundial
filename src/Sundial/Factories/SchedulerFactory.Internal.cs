@@ -54,7 +54,7 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
     /// GC 垃圾回收间隔
     /// </summary>
     /// <remarks>单位毫秒</remarks>
-    private static readonly TimeSpan GC_INTERVAL = TimeSpan.FromMilliseconds(5000);
+    private static readonly TimeSpan GC_INTERVAL = TimeSpan.FromMilliseconds(10000);
     private static Stopwatch _lastGcStopwatch = Stopwatch.StartNew();
 
     /// <summary>

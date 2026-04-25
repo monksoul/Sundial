@@ -16,27 +16,29 @@ namespace Sundial;
 internal static class Penetrates
 {
     /// <summary>
+    /// JSON 序列化选项
+    /// </summary>
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        AllowTrailingCommas = true
+    };
+
+    /// <summary>
     /// 获取默认的序列化对象
     /// </summary>
     /// <returns><see cref="JsonSerializerOptions"/></returns>
     internal static JsonSerializerOptions GetDefaultJsonSerializerOptions()
     {
-        var jsonSerializerOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            ReadCommentHandling = JsonCommentHandling.Skip,
-            //PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-            AllowTrailingCommas = true
-        };
-
         // 处理时间类型
-        if (!ScheduleOptionsBuilder.UseUtcTimestampProperty)
+        if (!ScheduleOptionsBuilder.UseUtcTimestampProperty && !_jsonSerializerOptions.Converters.OfType<DateTimeJsonConverter>().Any())
         {
-            jsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
+            _jsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
         }
 
-        return jsonSerializerOptions;
+        return _jsonSerializerOptions;
     }
 
     /// <summary>

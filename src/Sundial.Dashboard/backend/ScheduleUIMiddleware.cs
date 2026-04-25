@@ -30,6 +30,25 @@ public sealed class ScheduleUIMiddleware
     private readonly ISchedulerFactory _schedulerFactory;
 
     /// <summary>
+    /// 静态资源缓存 Key
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, string> _staticContentCache = new();
+
+    /// <summary>
+    /// JSON 序列化选项
+    /// </summary>
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        AllowTrailingCommas = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        WriteIndented = false
+    };
+
+    /// <summary>
     /// 构造函数
     /// </summary>
     /// <param name="next">请求委托</param>
@@ -71,39 +90,55 @@ public sealed class ScheduleUIMiddleware
 
         // ================================ 处理静态文件请求 ================================
         var staticFilePath = Options.RequestPath + "/";
-        if (context.Request.Path.Equals(staticFilePath, StringComparison.OrdinalIgnoreCase) || context.Request.Path.Equals(staticFilePath + "apiconfig.js", StringComparison.OrdinalIgnoreCase))
+        if (context.Request.Path.Equals(staticFilePath, StringComparison.OrdinalIgnoreCase) ||
+            context.Request.Path.Equals(staticFilePath + "apiconfig.js", StringComparison.OrdinalIgnoreCase))
         {
             var targetPath = context.Request.Path.Value?[staticFilePath.Length..];
             var isIndex = string.IsNullOrEmpty(targetPath);
+            var fileName = isIndex ? "index.html" : targetPath;
 
-            // 获取当前类型所在程序集和对应嵌入式文件路径
-            var currentAssembly = typeof(ScheduleUIExtensions).Assembly;
-
-            // 读取配置文件内容
-            byte[] buffer;
-            using (var readStream = currentAssembly.GetManifestResourceStream($"{currentAssembly.GetName().Name}.frontend.{(isIndex ? "index.html" : targetPath)}"))
+            // 尝试从缓存获取
+            var cacheKey = $"{fileName}_{Options.VirtualPath}_{Options.RequestPath}_{Options.DisplayEmptyTriggerJobs}_{Options.DisplayHead}_{Options.DefaultExpandAllJobs}_{ScheduleOptionsBuilder.UseUtcTimestampProperty}_{Options.Title}_{Options.LoginConfig?.SessionKey}_{Options.LoginConfig?.DefaultUsername}_{Options.LoginConfig?.DefaultPassword}";
+            if (!_staticContentCache.TryGetValue(cacheKey, out var content))
             {
-                buffer = new byte[readStream.Length];
-                _ = await readStream.ReadAsync(buffer);
-            }
+                // 获取当前类型所在程序集和对应嵌入式文件路径
+                var currentAssembly = typeof(ScheduleUIExtensions).Assembly;
+                var resourceName = $"{currentAssembly.GetName().Name}.frontend.{fileName}";
 
-            // 替换配置占位符
-            string content;
-            using (var stream = new MemoryStream(buffer))
-            {
-                using var streamReader = new StreamReader(stream, new UTF8Encoding(false));
-                content = await streamReader.ReadToEndAsync();
-                content = isIndex
-                    ? content.Replace(STATIC_FILES_PATH, $"{Options.VirtualPath}{Options.RequestPath}")
-                    : content.Replace("%(RequestPath)", $"{Options.VirtualPath}{Options.RequestPath}")
-                             .Replace("%(DisplayEmptyTriggerJobs)", Options.DisplayEmptyTriggerJobs ? "true" : "false")
-                             .Replace("%(DisplayHead)", Options.DisplayHead ? "true" : "false")
-                             .Replace("%(DefaultExpandAllJobs)", Options.DefaultExpandAllJobs ? "true" : "false")
-                             .Replace("%(UseUtcTimestamp)", ScheduleOptionsBuilder.UseUtcTimestampProperty ? "true" : "false")
-                             .Replace("%(Title)", Options.Title ?? string.Empty)
-                             .Replace("%(Login.SessionKey)", Options.LoginConfig?.SessionKey ?? "schedule_session_key")
-                             .Replace("%(Login.DefaultUsername)", Options.LoginConfig?.DefaultUsername ?? string.Empty)
-                             .Replace("%(Login.DefaultPassword)", Options.LoginConfig?.DefaultPassword ?? string.Empty);
+                // 读取配置文件内容
+                byte[] buffer;
+                using (var readStream = currentAssembly.GetManifestResourceStream(resourceName))
+                {
+                    buffer = new byte[readStream.Length];
+                    _ = await readStream.ReadAsync(buffer);
+                }
+
+                // 替换配置占位符
+                using (var stream = new MemoryStream(buffer))
+                {
+                    using var streamReader = new StreamReader(stream, new UTF8Encoding(false));
+                    content = await streamReader.ReadToEndAsync();
+
+                    if (isIndex)
+                    {
+                        content = content.Replace(STATIC_FILES_PATH, $"{Options.VirtualPath}{Options.RequestPath}");
+                    }
+                    else
+                    {
+                        content = content.Replace("%(RequestPath)", $"{Options.VirtualPath}{Options.RequestPath}")
+                                         .Replace("%(DisplayEmptyTriggerJobs)", Options.DisplayEmptyTriggerJobs ? "true" : "false")
+                                         .Replace("%(DisplayHead)", Options.DisplayHead ? "true" : "false")
+                                         .Replace("%(DefaultExpandAllJobs)", Options.DefaultExpandAllJobs ? "true" : "false")
+                                         .Replace("%(UseUtcTimestamp)", ScheduleOptionsBuilder.UseUtcTimestampProperty ? "true" : "false")
+                                         .Replace("%(Title)", Options.Title ?? string.Empty)
+                                         .Replace("%(Login.SessionKey)", Options.LoginConfig?.SessionKey ?? "schedule_session_key")
+                                         .Replace("%(Login.DefaultUsername)", Options.LoginConfig?.DefaultUsername ?? string.Empty)
+                                         .Replace("%(Login.DefaultPassword)", Options.LoginConfig?.DefaultPassword ?? string.Empty);
+                    }
+                }
+
+                // 存入缓存
+                _staticContentCache.TryAdd(cacheKey, content);
             }
 
             // 输出到客户端
@@ -292,32 +327,46 @@ public sealed class ScheduleUIMiddleware
                     context.Response.Headers["X-Accel-Buffering"] = "no";
 
                     var queue = new BlockingCollection<JobDetail>();
+                    EventHandler<SchedulerEventArgs> subscribeHandler = null;
 
-                    // 监听作业计划变化
-                    void Subscribe(object sender, SchedulerEventArgs args)
+                    try
                     {
-                        if (!queue.IsAddingCompleted)
+                        // 监听作业计划变化
+                        subscribeHandler = (sender, args) =>
                         {
-                            queue.TryAdd(args.JobDetail);
-                        }
-                    }
-                    _schedulerFactory.OnChanged += Subscribe;
+                            if (!queue.IsAddingCompleted)
+                            {
+                                queue.TryAdd(args.JobDetail);
+                            }
+                        };
 
-                    // 持续发送 SSE 协议数据
-                    foreach (var jobDetail in queue.GetConsumingEnumerable())
-                    {
-                        // 如果请求已终止则停止推送
-                        if (!context.RequestAborted.IsCancellationRequested)
+                        _schedulerFactory.OnChanged += subscribeHandler;
+
+                        // 持续发送 SSE 协议数据
+                        foreach (var jobDetail in queue.GetConsumingEnumerable(context.RequestAborted))
                         {
+                            // 如果请求已终止则停止推送
+                            if (context.RequestAborted.IsCancellationRequested)
+                            {
+                                break;
+                            }
+
                             var message = "data: " + SerializeToJson(jobDetail) + "\n\n";
                             await context.Response.WriteAsync(message, context.RequestAborted);
-                            //await context.Response.Body.FlushAsync();
                         }
-                        else break;
                     }
+                    catch { }
+                    finally
+                    {
+                        // 取消订阅
+                        if (subscribeHandler != null)
+                        {
+                            _schedulerFactory.OnChanged -= subscribeHandler;
+                        }
 
-                    queue.CompleteAdding();
-                    _schedulerFactory.OnChanged -= Subscribe;
+                        queue.CompleteAdding();
+                        queue.Dispose();
+                    }
                 }
                 break;
             // 登录验证
@@ -361,23 +410,12 @@ public sealed class ScheduleUIMiddleware
     /// <returns><see cref="string"/></returns>
     private static string SerializeToJson(object obj)
     {
-        // 初始化默认序列化选项
-        var jsonSerializerOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            ReadCommentHandling = JsonCommentHandling.Skip,
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-            AllowTrailingCommas = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            WriteIndented = false
-        };
-
         // 处理时间类型
-        var libraryAssembly = typeof(Schedular).Assembly;
-        var dateTimeJsonConverter = Activator.CreateInstance(libraryAssembly.GetType($"{libraryAssembly.GetName().Name}.DateTimeJsonConverter"));
-        jsonSerializerOptions.Converters.Add(dateTimeJsonConverter as JsonConverter);
+        if (!ScheduleOptionsBuilder.UseUtcTimestampProperty && !_jsonSerializerOptions.Converters.OfType<DateTimeJsonConverter>().Any())
+        {
+            _jsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
+        }
 
-        return JsonSerializer.Serialize(obj, jsonSerializerOptions);
+        return JsonSerializer.Serialize(obj, _jsonSerializerOptions);
     }
 }

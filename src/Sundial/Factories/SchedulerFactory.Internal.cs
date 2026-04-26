@@ -205,7 +205,7 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
             }
             else
             {
-                _logger.LogWarning("Schedule hosted service preload completed, and a total of <{Count}> schedulers are appended.", _schedulers.Count);
+                _logger.LogInformation("Schedule hosted service preload completed, and a total of <{Count}> schedulers are appended.", _schedulers.Count);
             }
         }
     }
@@ -278,24 +278,37 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
     /// 使作业调度器进入休眠状态
     /// </summary>
     /// <param name="startAt">起始时间</param>
-    public async Task SleepAsync(DateTime startAt)
+    /// <param name="stoppingToken">取消任务 Token</param>
+    public async Task SleepAsync(DateTime startAt, CancellationToken stoppingToken)
     {
         // 输出作业调度器进入休眠日志
         _logger.LogDebug("Schedule hosted service enters hibernation.");
 
         // 获取作业调度器总休眠时间
         var sleepMilliseconds = GetSleepMilliseconds(startAt);
-        var delay = sleepMilliseconds != null
-            ? sleepMilliseconds.Value
-            : int.MaxValue;   // 约 24.8 天
+
+        // 创建关联取消 Token
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, _sleepCancellationTokenSource.Token);
 
         try
         {
-            // 进入休眠状态
-            while (delay > 0)
+            // 无限期休眠
+            if (!sleepMilliseconds.HasValue)
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(Math.Min(int.MaxValue, delay)), _sleepCancellationTokenSource.Token);
-                delay -= int.MaxValue;
+                // 直到被 CancelSleep() 或外部 CancellationToken 取消
+                await Task.Delay(Timeout.Infinite, linkedCts.Token);
+            }
+            // 分段休眠
+            else
+            {
+                // 解决单次等待时间超过 Task.Delay 支持的最大值（int.MaxValue 毫秒 ≈ 24.8 天）
+                var remaining = sleepMilliseconds.Value;
+                while (remaining > 0)
+                {
+                    var chunk = (int)Math.Min(int.MaxValue, remaining);
+                    await Task.Delay(chunk, linkedCts.Token);
+                    remaining -= chunk;
+                }
             }
         }
         catch (Exception ex)

@@ -45,7 +45,7 @@ public partial class Trigger
     /// <returns></returns>
     public IEnumerable<TriggerTimeline> GetTimelines()
     {
-        return Timelines.OrderByDescending(u => u.CreatedTime).ToList();
+        return Timelines?.OrderByDescending(u => u.CreatedTime)?.ToList() ?? [];
     }
 
     /// <summary>

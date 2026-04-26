@@ -40,6 +40,11 @@
             作业计划工厂
             </summary>
         </member>
+        <member name="F:Sundial.ScheduleUIMiddleware._hostApplicationLifetime">
+            <summary>
+            主机生命周期服务
+            </summary>
+        </member>
         <member name="F:Sundial.ScheduleUIMiddleware._staticContentCache">
             <summary>
             静态资源缓存 Key
@@ -50,13 +55,14 @@
             JSON 序列化选项
             </summary>
         </member>
-        <member name="M:Sundial.ScheduleUIMiddleware.#ctor(Microsoft.AspNetCore.Http.RequestDelegate,Sundial.ISchedulerFactory,Sundial.ScheduleUIOptions)">
+        <member name="M:Sundial.ScheduleUIMiddleware.#ctor(Microsoft.AspNetCore.Http.RequestDelegate,Sundial.ISchedulerFactory,Sundial.ScheduleUIOptions,Microsoft.Extensions.Hosting.IHostApplicationLifetime)">
             <summary>
             构造函数
             </summary>
             <param name="next">请求委托</param>
             <param name="schedulerFactory">作业计划工厂</param>
             <param name="options">UI 配置选项</param>
+            <param name="hostApplicationLifetime">主机生命周期服务</param>
         </member>
         <member name="P:Sundial.ScheduleUIMiddleware.Options">
             <summary>

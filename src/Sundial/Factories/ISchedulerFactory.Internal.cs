@@ -41,7 +41,8 @@ public partial interface ISchedulerFactory
     /// 使作业调度器进入休眠状态
     /// </summary>
     /// <param name="startAt">起始时间</param>
-    Task SleepAsync(DateTime startAt);
+    /// <param name="stoppingToken">取消任务 Token</param>
+    Task SleepAsync(DateTime startAt, CancellationToken stoppingToken);
 
     /// <summary>
     /// 取消作业调度器休眠状态（强制唤醒）

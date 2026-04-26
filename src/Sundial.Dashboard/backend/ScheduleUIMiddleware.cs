@@ -4,6 +4,7 @@
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -30,6 +31,11 @@ public sealed class ScheduleUIMiddleware
     private readonly ISchedulerFactory _schedulerFactory;
 
     /// <summary>
+    /// 主机生命周期服务
+    /// </summary>
+    private readonly IHostApplicationLifetime _hostApplicationLifetime;
+
+    /// <summary>
     /// 静态资源缓存 Key
     /// </summary>
     private static readonly ConcurrentDictionary<string, string> _staticContentCache = new();
@@ -54,14 +60,17 @@ public sealed class ScheduleUIMiddleware
     /// <param name="next">请求委托</param>
     /// <param name="schedulerFactory">作业计划工厂</param>
     /// <param name="options">UI 配置选项</param>
+    /// <param name="hostApplicationLifetime">主机生命周期服务</param>
     public ScheduleUIMiddleware(RequestDelegate next
         , ISchedulerFactory schedulerFactory
-        , ScheduleUIOptions options)
+        , ScheduleUIOptions options
+        , IHostApplicationLifetime hostApplicationLifetime)
     {
         _next = next;
         _schedulerFactory = schedulerFactory;
         Options = options;
         ApiRequestPath = $"{options.RequestPath}/api";
+        _hostApplicationLifetime = hostApplicationLifetime;
     }
 
     /// <summary>
@@ -329,6 +338,10 @@ public sealed class ScheduleUIMiddleware
                     var queue = new BlockingCollection<JobDetail>();
                     EventHandler<SchedulerEventArgs> subscribeHandler = null;
 
+                    // 创建关联取消 Token
+                    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, _hostApplicationLifetime.ApplicationStopping);
+                    var cancelToken = linkedCts.Token;
+
                     try
                     {
                         // 监听作业计划变化
@@ -343,16 +356,16 @@ public sealed class ScheduleUIMiddleware
                         _schedulerFactory.OnChanged += subscribeHandler;
 
                         // 持续发送 SSE 协议数据
-                        foreach (var jobDetail in queue.GetConsumingEnumerable(context.RequestAborted))
+                        foreach (var jobDetail in queue.GetConsumingEnumerable(cancelToken))
                         {
                             // 如果请求已终止则停止推送
-                            if (context.RequestAborted.IsCancellationRequested)
+                            if (cancelToken.IsCancellationRequested)
                             {
                                 break;
                             }
 
                             var message = "data: " + SerializeToJson(jobDetail) + "\n\n";
-                            await context.Response.WriteAsync(message, context.RequestAborted);
+                            await context.Response.WriteAsync(message, cancelToken);
                         }
                     }
                     catch { }

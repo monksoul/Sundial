@@ -9,8 +9,13 @@ namespace Sundial;
 /// <summary>
 /// 作业执行上下文基类
 /// </summary>
-public abstract class JobExecutionContext
+public abstract class JobExecutionContext : IServiceProvider
 {
+    /// <summary>
+    ///     <see cref="IServiceProvider" /> 委托
+    /// </summary>
+    internal Func<Type, object?>? _serviceProvider;
+
     /// <summary>
     /// 构造函数
     /// </summary>
@@ -23,21 +28,22 @@ public abstract class JobExecutionContext
         , Trigger trigger
         , DateTime occurrenceTime
         , string runId
-        , IServiceProvider serviceProvider)
+        , IServiceProvider? serviceProvider)
     {
+        // 空检查
+        if (serviceProvider is not null)
+        {
+            var localServiceProvider = serviceProvider;
+            InitializeServiceProvider(localServiceProvider.GetService);
+        }
+
         JobId = jobDetail.JobId;
         TriggerId = trigger.TriggerId;
         JobDetail = jobDetail;
         Trigger = trigger;
         OccurrenceTime = occurrenceTime;
         RunId = runId;
-        ServiceProvider = serviceProvider;
     }
-
-    /// <summary>
-    /// 服务提供器
-    /// </summary>
-    public IServiceProvider ServiceProvider { get; }
 
     /// <summary>
     /// 作业 Id
@@ -84,6 +90,19 @@ public abstract class JobExecutionContext
     /// 存储作业执行过程中需要传递的数据
     /// </summary>
     public IDictionary<string, object> Items { get; internal set; }
+
+    /// <summary>
+    /// 作业计划工厂
+    /// </summary>
+    public ISchedulerFactory Factory => this.GetRequiredService<ISchedulerFactory>();
+
+    /// <summary>
+    /// 获取当前作业
+    /// </summary>
+    public IScheduler GetJob()
+    {
+        return Factory.GetJob(JobId);
+    }
 
     /// <summary>
     /// 获取作业执行过程中传递的数据
@@ -134,7 +153,7 @@ public abstract class JobExecutionContext
     public bool IsNormalStatus(ISchedulerFactory schedulerFactory = null)
     {
         // 解析作业计划工厂服务
-        schedulerFactory ??= ServiceProvider.GetRequiredService<ISchedulerFactory>();
+        schedulerFactory ??= Factory;
 
         // 情况 1：检查作业是否存在
         if (schedulerFactory.TryGetJob(JobId, out var scheduler) != ScheduleResult.Succeed)
@@ -182,5 +201,20 @@ public abstract class JobExecutionContext
     public override string ToString()
     {
         return $"{JobDetail} {Trigger}{(Mode == 1 ? " Manual" : string.Empty)} {OccurrenceTime.ToFormatString()}{(Trigger.NextRunTime == null ? $" [{Trigger.Status}]" : $" -> {Trigger.NextRunTime.ToFormatString()}")}";
+    }
+
+    /// <inheritdoc />
+    public object? GetService(Type serviceType)
+    {
+        return _serviceProvider?.Invoke(serviceType);
+    }
+
+    /// <summary>
+    ///     初始化 <see cref="IServiceProvider" />
+    /// </summary>
+    /// <param name="serviceProvider"><see cref="IServiceProvider" /> 委托</param>
+    internal void InitializeServiceProvider(Func<Type, object?> serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
     }
 }

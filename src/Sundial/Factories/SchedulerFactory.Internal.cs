@@ -305,8 +305,8 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
                 var remaining = sleepMilliseconds.Value;
                 while (remaining > 0)
                 {
-                    var chunk = (int)Math.Min(int.MaxValue, remaining);
-                    await Task.Delay(chunk, linkedCts.Token);
+                    var chunk = Math.Min(int.MaxValue, remaining);
+                    await Task.Delay(TimeSpan.FromMilliseconds(chunk), linkedCts.Token);
                     remaining -= chunk;
                 }
             }

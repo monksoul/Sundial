@@ -23,8 +23,14 @@
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
 	</ItemGroup>
 
+	<ItemGroup Condition=" '$(TargetFramework)' == 'net11.0' ">
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="11.0.0-preview.3.26207.106" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="11.0.0-preview.3.26207.106" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.3.0" />
+	</ItemGroup>
+
 	<ItemGroup>
-		<PackageReference Include="TimeCrontab" Version="3.7.2" />
+		<PackageReference Include="TimeCrontab" Version="3.7.3" />
 	</ItemGroup>
 
 </Project>

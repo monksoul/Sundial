@@ -25,7 +25,7 @@ public sealed class ScheduleUIOptions
     /// <summary>
     /// 看板标题
     /// </summary>
-    public string Title { get; set; } = "Schedule Dashboard";
+    public string Title { get; set; } = "Schedule";
 
     /// <summary>
     /// 生产环境关闭

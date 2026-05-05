@@ -68,55 +68,37 @@ public class PeriodTrigger : Trigger
     }
 
     /// <summary>
-    /// 将毫秒数格式化为更直观的时间单位字符串（如 ms, s, min, h, d, y）
+    /// 将毫秒数格式化为更直观的时间单位字符串（如 ms, s, m, h, d, y）
     /// </summary>
     /// <param name="ms">毫秒</param>
     /// <returns><see cref="string"/></returns>
     private static string FormatDuration(long ms)
     {
-        if (ms < 1000)
-        {
-            return $"{ms}ms";
-        }
+        if (ms < 0) return "-" + FormatDuration(-ms);
+        if (ms < 1000) return $"{ms}ms";
 
-        var seconds = ms / 1000.0;
-        if (seconds < 60)
+        var (value, unit) = ms switch
         {
-            var val = Math.Round(seconds * 10) / 10;
-            if (val >= 60)
-                return FormatDuration((long)(val * 1000));
-            return val % 1 == 0 ? $"{val:F0}s" : $"{val:F1}s";
-        }
+            < 60_000 => (ms / 1000.0, "s"),
+            < 3_600_000 => (ms / 60_000.0, "m"),
+            < 86_400_000 => (ms / 3_600_000.0, "h"),
+            < 31_536_000_000L => (ms / 86_400_000.0, "d"),
+            _ => (ms / 31_536_000_000.0, "y")
+        };
 
-        var minutes = seconds / 60;
-        if (minutes < 60)
-        {
-            var val = Math.Round(minutes * 10) / 10;
-            if (val >= 60)
-                return FormatDuration((long)(val * 60 * 1000));
-            return val % 1 == 0 ? $"{val:F0}min" : $"{val:F1}min";
-        }
+        return FormatValue(value, unit);
+    }
 
-        var hours = minutes / 60;
-        if (hours < 24)
-        {
-            var val = Math.Round(hours * 10) / 10;
-            if (val >= 24)
-                return FormatDuration((long)(val * 60 * 60 * 1000));
-            return val % 1 == 0 ? $"{val:F0}h" : $"{val:F1}h";
-        }
-
-        var days = hours / 24;
-        if (days < 365)
-        {
-            var val = Math.Round(days * 10) / 10;
-            if (val >= 365)
-                return FormatDuration((long)(val * 24 * 60 * 60 * 1000));
-            return val % 1 == 0 ? $"{val:F0}d" : $"{val:F1}d";
-        }
-
-        var years = days / 365;
-        var finalVal = Math.Round(years * 10) / 10;
-        return finalVal % 1 == 0 ? $"{finalVal:F0}y" : $"{finalVal:F1}y";
+    /// <summary>
+    /// 格式化数值为指定单位的字符串表示
+    /// </summary>
+    /// <param name="value">数值</param>
+    /// <param name="unit">单位</param>
+    /// <returns><see cref="string"/></returns>
+    private static string FormatValue(double value, string unit)
+    {
+        var rounded = Math.Round(value, 1);
+        var isInteger = Math.Abs(rounded % 1) < 0.0001;
+        return isInteger ? $"{rounded:F0}{unit}" : $"{rounded:F1}{unit}";
     }
 }

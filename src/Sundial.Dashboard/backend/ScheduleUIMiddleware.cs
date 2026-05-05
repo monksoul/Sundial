@@ -358,7 +358,7 @@ public sealed class ScheduleUIMiddleware
                         // 持续发送 SSE 协议数据
                         foreach (var jobDetail in queue.GetConsumingEnumerable(cancelToken))
                         {
-                            // 如果请求已终止则停止推送
+                            // 如果请求已终止或服务器关闭则停止推送
                             if (cancelToken.IsCancellationRequested)
                             {
                                 break;

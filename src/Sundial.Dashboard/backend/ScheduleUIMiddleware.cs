@@ -197,6 +197,35 @@ public sealed class ScheduleUIMiddleware
                 // 输出 JSON
                 await context.Response.WriteAsync(SerializeToJson(jobs));
                 break;
+            // 添加作业 
+            case "/add-job":
+                {
+                    // 读取内容
+                    using var reader = new StreamReader(context.Request.Body, Encoding.UTF8);
+                    var jsonContent = await reader.ReadToEndAsync();
+
+                    // 添加作业
+                    var sResult = _schedulerFactory.TryAddJob(SchedulerBuilder.From(jsonContent), out _);
+
+                    // 处理添加识别情况
+                    if (sResult != ScheduleResult.Succeed)
+                    {
+                        // 标识状态码为 500
+                        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+
+                        // 输出 JSON
+                        await context.Response.WriteAsync(SerializeToJson(new {
+                            msg = sResult.ToString(),
+                            ok = false
+                        }));
+
+                        return;
+                    }
+
+                    // 输出 JSON
+                    await context.Response.WriteAsync(SerializeToJson(new { ok = true, msg = sResult.ToString() }));
+                    break;
+                }
             // 获取所有运行记录
             case "/timelines-log":
                 var allTimelines = _schedulerFactory.GetJobs()

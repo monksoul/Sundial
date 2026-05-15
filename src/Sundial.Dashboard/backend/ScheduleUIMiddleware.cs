@@ -55,6 +55,18 @@ public sealed class ScheduleUIMiddleware
     };
 
     /// <summary>
+    /// 静态构造函数
+    /// </summary>
+    static ScheduleUIMiddleware()
+    {
+        // 处理时间类型
+        if (!ScheduleOptionsBuilder.UseUtcTimestampProperty)
+        {
+            _jsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
+        }
+    }
+
+    /// <summary>
     /// 构造函数
     /// </summary>
     /// <param name="next">请求委托</param>
@@ -201,7 +213,7 @@ public sealed class ScheduleUIMiddleware
             case "/add-job":
                 {
                     // 读取内容
-                    using var reader = new StreamReader(context.Request.Body, Encoding.UTF8);
+                    using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, leaveOpen: true);
                     var jsonContent = await reader.ReadToEndAsync();
 
                     // 添加作业
@@ -452,12 +464,6 @@ public sealed class ScheduleUIMiddleware
     /// <returns><see cref="string"/></returns>
     private static string SerializeToJson(object obj)
     {
-        // 处理时间类型
-        if (!ScheduleOptionsBuilder.UseUtcTimestampProperty && !_jsonSerializerOptions.Converters.OfType<DateTimeJsonConverter>().Any())
-        {
-            _jsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
-        }
-
         return JsonSerializer.Serialize(obj, _jsonSerializerOptions);
     }
 }

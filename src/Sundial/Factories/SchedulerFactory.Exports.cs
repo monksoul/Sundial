@@ -1193,7 +1193,7 @@ internal sealed partial class SchedulerFactory
         }
 
         // 添加到待执行集合中
-        _manualRunJobIds.Add((jobId, triggerId));
+        _manualRunJobIds.Enqueue((jobId, triggerId));
 
         // 取消作业调度器休眠状态（强制唤醒）
         CancelSleep();

@@ -98,7 +98,7 @@ internal sealed class JobCancellationToken : IJobCancellationToken
                 // 输出非任务取消异常日志
                 if (!(ex is OperationCanceledException || (ex is AggregateException aggEx && aggEx.InnerExceptions.Count == 1 && aggEx.InnerExceptions[0] is TaskCanceledException)))
                 {
-                    // 待输出
+                    _logger.LogError(ex, "Error while canceling token for key {TokenKey}.", tokenKey);
                 }
             }
         }

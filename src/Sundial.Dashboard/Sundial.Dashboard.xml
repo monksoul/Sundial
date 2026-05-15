@@ -55,6 +55,11 @@
             JSON 序列化选项
             </summary>
         </member>
+        <member name="M:Sundial.ScheduleUIMiddleware.#cctor">
+            <summary>
+            静态构造函数
+            </summary>
+        </member>
         <member name="M:Sundial.ScheduleUIMiddleware.#ctor(Microsoft.AspNetCore.Http.RequestDelegate,Sundial.ISchedulerFactory,Sundial.ScheduleUIOptions,Microsoft.Extensions.Hosting.IHostApplicationLifetime)">
             <summary>
             构造函数

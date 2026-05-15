@@ -4,7 +4,6 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 
 namespace Sundial;
 
@@ -51,13 +50,6 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
     private CancellationTokenSource _sleepCancellationTokenSource;
 
     /// <summary>
-    /// GC 垃圾回收间隔
-    /// </summary>
-    /// <remarks>单位毫秒</remarks>
-    private static readonly TimeSpan GC_INTERVAL = TimeSpan.FromMilliseconds(10000);
-    private static Stopwatch _lastGcStopwatch = Stopwatch.StartNew();
-
-    /// <summary>
     /// 作业计划集合
     /// </summary>
     private readonly ConcurrentDictionary<string, Scheduler> _schedulers = new();
@@ -75,8 +67,12 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
     /// <summary>
     /// 不受控的作业 Id 集合
     /// </summary>
-    /// <remarks>用于实现 立即执行 的作业</remarks>
-    private readonly List<(string JobId, string TriggerId)> _manualRunJobIds;
+    private readonly ConcurrentQueue<(string JobId, string TriggerId)> _manualRunJobIds = new();
+
+    /// <summary>
+    /// 休眠 Token 的取消注册句柄
+    /// </summary>
+    private CancellationTokenRegistration? _sleepCancellationRegistration;
 
     /// <summary>
     /// 构造函数
@@ -94,7 +90,6 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
         _logger = logger;
         _jobCancellationToken = jobCancellationToken;
         _schedulerBuilders = schedulerBuilders;
-        _manualRunJobIds = [];
 
         Persistence = _serviceProvider.GetService<IJobPersistence>();
 
@@ -118,11 +113,6 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
     /// 标识 Preload 是否初始化完成
     /// </summary>
     private bool PreloadCompleted { get; set; } = false;
-
-    /// <summary>
-    /// GC 最近一次回收时间
-    /// </summary>
-    private DateTime? LastGCCollectTime { get; set; }
 
     /// <summary>
     /// 作业调度器初始化
@@ -193,7 +183,6 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
 
         // 释放引用内存并立即回收GC
         _schedulerBuilders.Clear();
-        GCCollect();
 
         // 输出作业调度器初始化日志
         if (preloadSucceed)
@@ -258,7 +247,7 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
         var willBeRunJobs = currentRunSchedulers.Concat(manualRunSchedulers);
 
         // 清空 立即执行 作业 Id 集合
-        _manualRunJobIds.Clear();
+        while (_manualRunJobIds.TryDequeue(out _)) { }
 
         return willBeRunJobs;
     }
@@ -426,25 +415,6 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
     }
 
     /// <summary>
-    /// GC 垃圾回收器回收处理
-    /// </summary>
-    /// <remarks>避免频繁 GC 回收</remarks>
-    public void GCCollect()
-    {
-        if (_lastGcStopwatch.Elapsed >= GC_INTERVAL)
-        {
-            _lastGcStopwatch.Restart();
-
-            // 通知 GC 垃圾回收器立即回收，使用 Task.Run 避免阻塞当前线程
-            Task.Run(() =>
-            {
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-            });
-        }
-    }
-
-    /// <summary>
     /// 释放非托管资源
     /// </summary>
     public void Dispose()
@@ -457,6 +427,8 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
             // 取消当前任务并释放作业调度器取消休眠 Token
             if (!_sleepCancellationTokenSource.IsCancellationRequested) _sleepCancellationTokenSource.Cancel();
             _sleepCancellationTokenSource.Dispose();
+
+            _sleepCancellationRegistration?.Dispose();
 
             // 设置 1.5秒的缓冲时间，避免还有消息没有完成持久化
             _processQueueTask?.Wait(1500);
@@ -559,17 +531,15 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
     private void CreateCancellationTokenSource()
     {
         _sleepCancellationTokenSource?.Dispose();
+        _sleepCancellationRegistration?.Dispose();
 
         // 初始化作业调度器休眠 Token
         _sleepCancellationTokenSource = new CancellationTokenSource();
 
         // 监听休眠被取消，并通知 GC 垃圾回收器回收
-        _sleepCancellationTokenSource.Token.Register(() =>
+        _sleepCancellationRegistration = _sleepCancellationTokenSource.Token.Register(() =>
         {
             _logger.LogWarning("Schedule hosted service cancels hibernation.");
-
-            // 通知 GC 垃圾回收器立即回收
-            GCCollect();
         });
     }
 

@@ -188,12 +188,11 @@ internal sealed class ScheduleHostedService : BackgroundService
                 // 添加待执行的作业计划任务
                 var task = ExecuteJobTriggerAsync(jobId, jobDetail, trigger, triggerId, occurrenceTime, startAt, jobLogger, stoppingToken);
                 _runningTasks.Add(task);
-                _ = task;
+
+                // 任务完成后自动从集合中移除
+                _ = task.ContinueWith(t => _runningTasks.TryTake(out _), TaskContinuationOptions.ExecuteSynchronously);
             }
         }
-
-        // 清理已完成的任务引用
-        CleanCompletedTasks();
 
         // 作业调度器进入休眠状态
         await _schedulerFactory.SleepAsync(startAt, stoppingToken);
@@ -412,16 +411,26 @@ internal sealed class ScheduleHostedService : BackgroundService
         // 作业集群停止通知
         ClusterServer?.Stop(new(ClusterId));
 
+        _logger.LogInformation("Schedule hosted service is stopping...");
+
         // 等待正在运行的作业完成
         if (!_runningTasks.IsEmpty)
         {
-            _logger.LogInformation("Waiting for {Count} running jobs to complete before shutdown...", _runningTasks.Count);
+            var tasks = _runningTasks.ToArray();
+            _logger.LogInformation("Waiting for {Count} running jobs to complete before shutdown...", tasks.Length);
 
             // 最多等待 1.5 秒
-            var completedTask = await Task.WhenAny(Task.WhenAll(_runningTasks), Task.Delay(TimeSpan.FromMilliseconds(1500), cancellationToken));
-            if (completedTask != Task.WhenAll(_runningTasks))
+            var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(1500), cancellationToken);
+            var whenAllTask = Task.WhenAll(tasks);
+
+            var completedTask = await Task.WhenAny(whenAllTask, timeoutTask);
+            if (completedTask == timeoutTask)
             {
                 _logger.LogWarning("Shutdown timeout reached. Some jobs may be terminated abruptly.");
+            }
+            else
+            {
+                _logger.LogInformation("All running jobs completed.");
             }
         }
 
@@ -526,18 +535,5 @@ internal sealed class ScheduleHostedService : BackgroundService
         {
             await asyncDisposable.DisposeAsync();
         }
-    }
-
-    /// <summary>
-    /// 清理已完成的任务引用
-    /// </summary>
-    private void CleanCompletedTasks()
-    {
-        var running = new List<Task>();
-        while (_runningTasks.TryTake(out var task))
-        {
-            if (!task.IsCompleted) running.Add(task);
-        }
-        foreach (var t in running) _runningTasks.Add(t);
     }
 }

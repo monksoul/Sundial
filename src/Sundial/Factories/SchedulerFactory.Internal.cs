@@ -57,7 +57,7 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
     /// <summary>
     /// 作业计划构建器集合
     /// </summary>
-    private readonly IList<SchedulerBuilder> _schedulerBuilders;
+    private IList<SchedulerBuilder> _schedulerBuilders;
 
     /// <summary>
     /// 作业持久化记录消息队列（线程安全）
@@ -100,7 +100,7 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
         {
             // 创建长时间运行的后台任务，并将作业运行消息写入持久化中
             _processQueueTask = Task.Factory.StartNew(async state => await ((SchedulerFactory)state).ProcessQueueAsync()
-                , this, TaskCreationOptions.LongRunning);
+                , this, TaskCreationOptions.LongRunning).Unwrap();
         }
     }
 
@@ -181,8 +181,9 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
         // 标记当前方法初始化完成
         PreloadCompleted = true;
 
-        // 释放引用内存并立即回收GC
-        _schedulerBuilders.Clear();
+        // 释放引用内存并帮助 GC 回收
+        _schedulerBuilders?.Clear();
+        _schedulerBuilders = null;
 
         // 输出作业调度器初始化日志
         if (preloadSucceed)
@@ -210,8 +211,8 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
         // 定义静态内部函数用于委托检查
         bool triggerShouldRun(Scheduler s, Trigger t) => t.CurrentShouldRun(s.JobDetail, startAt);
 
-        // 查询分组所有作业计划
-        var jobsOfGroup = (GetJobs(group, true) as IEnumerable<Scheduler>);
+        // 获取所有作业计划
+        var jobsOfGroup = (GetJobs(group, true) as IEnumerable<Scheduler>)?.ToList() ?? [];
 
         // 查找所有即将触发的作业计划
         var currentRunSchedulers = jobsOfGroup
@@ -224,9 +225,14 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
                  });
 
         // 查看 立即执行 的作业
-        var runJobIds = _manualRunJobIds.ToArray();
+        var runJobItems = new List<(string JobId, string TriggerId)>();
+        while (_manualRunJobIds.TryDequeue(out var item))
+        {
+            runJobItems.Add(item);
+        }
+
         var manualRunSchedulers = from job in jobsOfGroup
-                                  join runJob in runJobIds on job.JobId equals runJob.JobId into newRunJobs
+                                  join runJob in runJobItems on job.JobId equals runJob.JobId into newRunJobs
                                   from runJob in newRunJobs.DefaultIfEmpty()
                                   where job.JobId == runJob.JobId
                                   select new Scheduler(job.JobDetail, job.Triggers.Values
@@ -245,9 +251,6 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
 
         // 合并即将执行的作业
         var willBeRunJobs = currentRunSchedulers.Concat(manualRunSchedulers);
-
-        // 清空 立即执行 作业 Id 集合
-        while (_manualRunJobIds.TryDequeue(out _)) { }
 
         return willBeRunJobs;
     }

@@ -1,7 +1,7 @@
 <Project>
 	<PropertyGroup>
 		<LangVersion>preview</LangVersion>
-		<Version>2.230</Version>
+		<Version>2.231</Version>
 		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -25,10 +25,6 @@
 
 	<PropertyGroup>
 		<DocumentationFile>$(MSBuildProjectName).xml</DocumentationFile>
-	</PropertyGroup>
-
-	<PropertyGroup>
-		<LangVersion>latest</LangVersion>
 	</PropertyGroup>
 
 	<ItemGroup>

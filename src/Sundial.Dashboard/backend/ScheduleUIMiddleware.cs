@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Channels;
 
 namespace Sundial;
 
@@ -389,7 +390,7 @@ public sealed class ScheduleUIMiddleware
                     // 防止 Nginx 缓存 Server-Sent Events
                     context.Response.Headers["X-Accel-Buffering"] = "no";
 
-                    var queue = new BlockingCollection<JobDetail>();
+                    var channel = Channel.CreateUnbounded<JobDetail>();
                     EventHandler<SchedulerEventArgs> subscribeHandler = null;
 
                     // 创建关联取消 Token
@@ -401,16 +402,13 @@ public sealed class ScheduleUIMiddleware
                         // 监听作业计划变化
                         subscribeHandler = (sender, args) =>
                         {
-                            if (!queue.IsAddingCompleted)
-                            {
-                                queue.TryAdd(args.JobDetail);
-                            }
+                            channel.Writer.TryWrite(args.JobDetail);
                         };
 
                         _schedulerFactory.OnChanged += subscribeHandler;
 
                         // 持续发送 SSE 协议数据
-                        foreach (var jobDetail in queue.GetConsumingEnumerable(cancelToken))
+                        await foreach (var jobDetail in channel.Reader.ReadAllAsync(cancelToken))
                         {
                             // 如果请求已终止或服务器关闭则停止推送
                             if (cancelToken.IsCancellationRequested)
@@ -431,8 +429,8 @@ public sealed class ScheduleUIMiddleware
                             _schedulerFactory.OnChanged -= subscribeHandler;
                         }
 
-                        queue.CompleteAdding();
-                        queue.Dispose();
+                        // 标记 Channel 写入完成
+                        channel.Writer.Complete();
                     }
                 }
                 else

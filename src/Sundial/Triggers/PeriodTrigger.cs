@@ -68,25 +68,30 @@ public class PeriodTrigger : Trigger
     }
 
     /// <summary>
-    /// 将毫秒数格式化为更直观的时间单位字符串（如 ms, s, m, h, d, y）
+    /// 将毫秒格式化为更直观的时间单位字符串（如 ms, s, m, h, d, y）
     /// </summary>
-    /// <param name="ms">毫秒</param>
+    /// <param name="millisecond">毫秒</param>
     /// <returns><see cref="string"/></returns>
-    private static string FormatDuration(long ms)
+    private static string FormatDuration(long millisecond)
     {
-        if (ms < 0) return "-" + FormatDuration(-ms);
-        if (ms < 1000) return $"{ms}ms";
-
-        var (value, unit) = ms switch
+        switch (millisecond)
         {
-            < 60_000 => (ms / 1000.0, "s"),
-            < 3_600_000 => (ms / 60_000.0, "m"),
-            < 86_400_000 => (ms / 3_600_000.0, "h"),
-            < 31_536_000_000L => (ms / 86_400_000.0, "d"),
-            _ => (ms / 31_536_000_000.0, "y")
-        };
+            case < 0:
+                return "-" + FormatDuration(-millisecond);
+            case < 1000:
+                return $"{millisecond}ms";
+            default:
+                var (value, unit) = millisecond switch
+                {
+                    < 60_000 => (millisecond / 1000.0, "s"),
+                    < 3_600_000 => (millisecond / 60_000.0, "m"),
+                    < 86_400_000 => (millisecond / 3_600_000.0, "h"),
+                    < 31_536_000_000L => (millisecond / 86_400_000.0, "d"),
+                    _ => (millisecond / 31_536_000_000.0, "y")
+                };
 
-        return FormatValue(value, unit);
+                return FormatValue(value, unit);
+        }
     }
 
     /// <summary>

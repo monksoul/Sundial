@@ -151,9 +151,9 @@
             Schedule UI 登录配置
             </summary>
         </member>
-        <member name="P:Sundial.LoginConfig.SessionKey">
+        <member name="P:Sundial.LoginConfig.AppSecret">
             <summary>
-            客户端存储的 SessionKey
+            看板请求密钥
             </summary>
         </member>
         <member name="P:Sundial.LoginConfig.DefaultUsername">

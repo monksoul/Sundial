@@ -66,9 +66,9 @@ public sealed class ScheduleUIOptions
 public sealed class LoginConfig
 {
     /// <summary>
-    /// 客户端存储的 SessionKey
+    /// 看板请求密钥
     /// </summary>
-    public string SessionKey { get; set; } = "schedule_session_key";
+    public string AppSecret { get; set; }
 
     /// <summary>
     /// 默认登录名

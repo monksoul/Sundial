@@ -119,7 +119,7 @@ public sealed class ScheduleUIMiddleware
             var fileName = isIndex ? "index.html" : targetPath;
 
             // 尝试从缓存获取
-            var cacheKey = $"{fileName}_{Options.VirtualPath}_{Options.RequestPath}_{Options.DisplayEmptyTriggerJobs}_{Options.DisplayHead}_{Options.DefaultExpandAllJobs}_{ScheduleOptionsBuilder.UseUtcTimestampProperty}_{Options.Title}_{Options.LoginConfig?.SessionKey}_{Options.LoginConfig?.DefaultUsername}_{Options.LoginConfig?.DefaultPassword}";
+            var cacheKey = $"{fileName}_{Options.VirtualPath}_{Options.RequestPath}_{Options.DisplayEmptyTriggerJobs}_{Options.DisplayHead}_{Options.DefaultExpandAllJobs}_{ScheduleOptionsBuilder.UseUtcTimestampProperty}_{Options.Title}_{Options.LoginConfig?.DefaultUsername}_{Options.LoginConfig?.DefaultPassword}";
             if (!_staticContentCache.TryGetValue(cacheKey, out var content))
             {
                 // 获取当前类型所在程序集和对应嵌入式文件路径
@@ -152,7 +152,6 @@ public sealed class ScheduleUIMiddleware
                                          .Replace("%(DefaultExpandAllJobs)", Options.DefaultExpandAllJobs ? "true" : "false")
                                          .Replace("%(UseUtcTimestamp)", ScheduleOptionsBuilder.UseUtcTimestampProperty ? "true" : "false")
                                          .Replace("%(Title)", Options.Title ?? string.Empty)
-                                         .Replace("%(Login.SessionKey)", Options.LoginConfig?.SessionKey ?? "schedule_session_key")
                                          .Replace("%(Login.DefaultUsername)", Options.LoginConfig?.DefaultUsername ?? string.Empty)
                                          .Replace("%(Login.DefaultPassword)", Options.LoginConfig?.DefaultPassword ?? string.Empty);
                     }
@@ -198,6 +197,20 @@ public sealed class ScheduleUIMiddleware
         context.Response.ContentType = "application/json; charset=utf-8";
         context.Response.Headers.AccessControlAllowOrigin = "*";
         context.Response.Headers.AccessControlAllowHeaders = "*";
+
+        // 读取密钥
+        var appSecret = context.Request.Headers["Authorization"].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(appSecret))
+        {
+            appSecret = context.Request.Query["appsecret"].FirstOrDefault();
+        }
+        // 验证密钥
+        if (action != "/login" && !string.Equals(appSecret, Options.LoginConfig.AppSecret, StringComparison.Ordinal))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsync("非法操作");
+            return;
+        }
 
         // 路由匹配
         switch (action)
@@ -422,30 +435,46 @@ public sealed class ScheduleUIMiddleware
                         queue.Dispose();
                     }
                 }
+                else
+                {
+                    context.Response.StatusCode = StatusCodes.Status405MethodNotAllowed;
+                    await context.Response.WriteAsync("Only SSE (text/event-stream) is supported.");
+                }
                 break;
             // 登录验证
             case "/login":
                 var username = context.Request.Form["username"];
                 var password = context.Request.Form["password"];
 
-                try
+                // 如果未配置登录密钥或者长度不足 16 个字符，则直接返回 401
+                if (string.IsNullOrWhiteSpace(Options.LoginConfig.AppSecret) || Options.LoginConfig.AppSecret.Trim().Length < 16)
                 {
-                    // 调用自定义验证逻辑
-                    if (Options.LoginConfig?.OnLoging is not null && await Options.LoginConfig.OnLoging(username, password, context))
-                    {
-                        context.Response.StatusCode = StatusCodes.Status200OK;
-                        await context.Response.WriteAsync("OK");
-                    }
-                    else
-                    {
-                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                        await context.Response.WriteAsync("用户名或密码错误");
-                    }
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    await context.Response.WriteAsync("系统未正确配置登录密钥");
                 }
-                catch (Exception ex)
+                else
                 {
-                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                    await context.Response.WriteAsync(ex.Message);
+                    try
+                    {
+                        // 调用自定义验证逻辑
+                        if (Options.LoginConfig?.OnLoging is not null && await Options.LoginConfig.OnLoging(username, password, context))
+                        {
+                            context.Response.Headers["access-token"] = Options.LoginConfig.AppSecret;
+                            context.Response.Headers.Append("Access-Control-Expose-Headers", "access-token");
+                            context.Response.StatusCode = StatusCodes.Status200OK;
+                            await context.Response.WriteAsync("OK");
+                        }
+                        else
+                        {
+                            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                            await context.Response.WriteAsync("用户名或密码错误");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                        await context.Response.WriteAsync(ex.Message);
+                    }
                 }
 
                 break;

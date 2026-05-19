@@ -15,6 +15,7 @@ var app = builder.Build();
 app.UseStaticFiles();
 app.UseScheduleUI(options =>
 {
+    options.LoginConfig.AppSecret = "3f2d0ea0ef4df562719e70e41413658e";
     options.LoginConfig.DefaultUsername = "schedule";
 });
 

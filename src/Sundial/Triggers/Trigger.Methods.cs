@@ -45,7 +45,7 @@ public partial class Trigger
     /// <returns></returns>
     public IEnumerable<TriggerTimeline> GetTimelines()
     {
-        return Timelines?.OrderByDescending(u => u.CreatedTime)?.ToList() ?? [];
+        return Timelines.OrderByDescending(u => u.CreatedTime).ToList();
     }
 
     /// <summary>
@@ -318,15 +318,6 @@ public partial class Trigger
     /// <returns><see cref="Task"/></returns>
     internal async Task RecordTimelineAsync(ISchedulerFactory schedulerFactory, string jobId, string exception = null)
     {
-        Timelines ??= new();
-
-        // 只保留 5 条记录
-        if (Timelines.Count >= 5)
-        {
-            var _timelines = Timelines.Dequeue();
-            _timelines?.Dispose();
-        }
-
         var timeline = new TriggerTimeline
         {
             JobId = jobId,
@@ -344,6 +335,12 @@ public partial class Trigger
 
         Timelines.Enqueue(timeline);
 
+        // 只保留 5 条记录
+        while (Timelines.Count > 5)
+        {
+            Timelines.TryDequeue(out _);
+        }
+
         // 调用事件委托（记录作业触发器运行信息）
         if (schedulerFactory is SchedulerFactory schedulerFactoryInstance)
         {
@@ -351,8 +348,8 @@ public partial class Trigger
             var scheduler = schedulerFactoryInstance.GetJob(jobId);
             if (scheduler is null)
             {
-                Timelines.Clear();
-                Timelines = null;
+                // 清空队列
+                while (Timelines.TryDequeue(out _)) { }
 
                 return;
             }

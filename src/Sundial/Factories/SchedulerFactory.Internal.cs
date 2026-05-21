@@ -83,6 +83,16 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
     private CancellationTokenRegistration? _sleepCancellationRegistration;
 
     /// <summary>
+    /// 休眠并发访问锁
+    /// </summary>
+    private readonly object _sleepLock = new();
+
+    /// <summary>
+    /// 标识是否已释放
+    /// </summary>
+    private bool _disposed;
+
+    /// <summary>
     /// 构造函数
     /// </summary>
     /// <param name="serviceProvider">服务提供器</param>
@@ -286,8 +296,16 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
         // 获取作业调度器总休眠时间
         var sleepMilliseconds = GetSleepMilliseconds(startAt);
 
+        // 处理读取 _sleepCancellationTokenSource 时恰好被其他线程释放问题
+        CancellationToken sleepToken;
+        lock (_sleepLock)
+        {
+            if (_disposed) return;
+            sleepToken = _sleepCancellationTokenSource.Token;
+        }
+
         // 创建关联取消 Token
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, _sleepCancellationTokenSource.Token);
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, sleepToken);
 
         try
         {
@@ -328,21 +346,30 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
     /// </summary>
     public void CancelSleep()
     {
-        try
+        lock (_sleepLock)
         {
-            // 取消休眠，如果存在错误立即抛出
-            _sleepCancellationTokenSource.Cancel(true);
-        }
-        catch (Exception ex)
-        {
-            // 输出非任务取消异常日志
-            if (!(ex is OperationCanceledException || (ex is AggregateException aggEx && aggEx.InnerExceptions.Count == 1 && aggEx.InnerExceptions[0] is TaskCanceledException)))
-            {
-                _logger.LogError(ex, $"Error canceling sleep. {ex.Message}");
-            }
+            // 检查是否已释放
+            if (_disposed) return;
 
-            // 重新初始化作业调度器取消休眠 Token
-            CreateCancellationTokenSource();
+            try
+            {
+                // 取消休眠，如果存在错误立即抛出
+                _sleepCancellationTokenSource.Cancel(true);
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (Exception ex)
+            {
+                // 输出非任务取消异常日志
+                if (!(ex is OperationCanceledException || (ex is AggregateException aggEx && aggEx.InnerExceptions.Count == 1 && aggEx.InnerExceptions[0] is TaskCanceledException)))
+                {
+                    _logger.LogError(ex, $"Error canceling sleep. {ex.Message}");
+                }
+
+                // 重新初始化作业调度器取消休眠 Token
+                CreateCancellationTokenSource();
+            }
         }
     }
 
@@ -421,14 +448,27 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
         // 标记持久化消息队列停止写入
         _persistenceMessageQueue.Writer.TryComplete();
 
+        lock (_sleepLock)
+        {
+            // 检查是否已释放
+            if (_disposed) return;
+            _disposed = true;
+
+            try
+            {
+                // 取消当前任务并释放作业调度器取消休眠 Token
+                if (!_sleepCancellationTokenSource.IsCancellationRequested) _sleepCancellationTokenSource.Cancel();
+                _sleepCancellationTokenSource.Dispose();
+
+                _sleepCancellationRegistration?.Dispose();
+            }
+            catch (TaskCanceledException) { }
+            catch (AggregateException ex) when (ex.InnerExceptions.Count == 1 && ex.InnerExceptions[0] is TaskCanceledException) { }
+            catch { }
+        }
+
         try
         {
-            // 取消当前任务并释放作业调度器取消休眠 Token
-            if (!_sleepCancellationTokenSource.IsCancellationRequested) _sleepCancellationTokenSource.Cancel();
-            _sleepCancellationTokenSource.Dispose();
-
-            _sleepCancellationRegistration?.Dispose();
-
             // 设置 1.5秒的缓冲时间，避免还有消息没有完成持久化
             _processQueueTask?.Wait(1500);
         }
@@ -529,17 +569,23 @@ internal sealed partial class SchedulerFactory : ISchedulerFactory
     /// </summary>
     private void CreateCancellationTokenSource()
     {
-        _sleepCancellationTokenSource?.Dispose();
-        _sleepCancellationRegistration?.Dispose();
-
-        // 初始化作业调度器休眠 Token
-        _sleepCancellationTokenSource = new CancellationTokenSource();
-
-        // 监听休眠被取消，并通知 GC 垃圾回收器回收
-        _sleepCancellationRegistration = _sleepCancellationTokenSource.Token.Register(() =>
+        lock (_sleepLock)
         {
-            _logger.LogWarning("Schedule hosted service cancels hibernation.");
-        });
+            // 检查是否已释放
+            if (_disposed) return;
+
+            _sleepCancellationTokenSource?.Dispose();
+            _sleepCancellationRegistration?.Dispose();
+
+            // 初始化作业调度器休眠 Token
+            _sleepCancellationTokenSource = new CancellationTokenSource();
+
+            // 监听休眠被取消，并通知 GC 垃圾回收器回收
+            _sleepCancellationRegistration = _sleepCancellationTokenSource.Token.Register(() =>
+            {
+                _logger.LogWarning("Schedule hosted service cancels hibernation.");
+            });
+        }
     }
 
     /// <summary>

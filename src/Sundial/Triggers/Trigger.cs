@@ -2,6 +2,7 @@
 //
 // 此源代码遵循位于源代码树根目录中的 LICENSE 文件的许可证。
 
+using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
 
 namespace Sundial;
@@ -181,7 +182,7 @@ public partial class Trigger
     /// 作业触发器最近运行记录
     /// </summary>
     /// <remarks>默认只保存 10 条</remarks>
-    internal Queue<TriggerTimeline> Timelines { get; set; } = new();
+    internal ConcurrentQueue<TriggerTimeline> Timelines { get; set; } = new();
 
     /// <summary>
     /// 触发模式

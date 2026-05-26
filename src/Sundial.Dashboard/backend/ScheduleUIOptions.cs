@@ -68,6 +68,7 @@ public sealed class LoginConfig
     /// <summary>
     /// 看板请求密钥
     /// </summary>
+    /// <remarks>登录密钥长度不少于 16 个字符。</remarks>
     public string AppSecret { get; set; }
 
     /// <summary>

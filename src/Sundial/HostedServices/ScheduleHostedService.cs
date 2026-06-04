@@ -49,7 +49,7 @@ internal sealed class ScheduleHostedService : BackgroundService
     /// <summary>
     /// 追踪当前正在运行的作业任务
     /// </summary>
-    private readonly ConcurrentBag<Task> _runningTasks = [];
+    private readonly ConcurrentDictionary<Task, byte> _runningTasks = new();
 
     /// <summary>
     /// 构造函数
@@ -187,10 +187,10 @@ internal sealed class ScheduleHostedService : BackgroundService
 
                 // 添加待执行的作业计划任务
                 var task = ExecuteJobTriggerAsync(jobId, jobDetail, trigger, triggerId, occurrenceTime, startAt, jobLogger, stoppingToken);
-                _runningTasks.Add(task);
+                _runningTasks.TryAdd(task, 0);
 
                 // 任务完成后自动从集合中移除
-                _ = task.ContinueWith(t => _runningTasks.TryTake(out _), TaskContinuationOptions.ExecuteSynchronously);
+                _ = task.ContinueWith(t => _runningTasks.TryRemove(t, out _), TaskContinuationOptions.ExecuteSynchronously);
             }
         }
 
@@ -416,7 +416,7 @@ internal sealed class ScheduleHostedService : BackgroundService
         // 等待正在运行的作业完成
         if (!_runningTasks.IsEmpty)
         {
-            var tasks = _runningTasks.ToArray();
+            var tasks = _runningTasks.Keys.ToArray();
             _logger.LogInformation("Waiting for {Count} running jobs to complete before shutdown...", tasks.Length);
 
             // 最多等待 1.5 秒

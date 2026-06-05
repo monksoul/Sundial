@@ -199,6 +199,14 @@ public sealed class ScheduleUIMiddleware
         context.Response.Headers.AccessControlAllowOrigin = "*";
         context.Response.Headers.AccessControlAllowHeaders = "*";
 
+        // 如果未配置登录密钥或者长度不足 16 个字符，则直接返回 401
+        if (string.IsNullOrWhiteSpace(Options.LoginConfig?.AppSecret) || Options.LoginConfig.AppSecret.Trim().Length < 16)
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsync("System login key is not properly configured.");
+            return;
+        }
+
         // 读取密钥
         var appSecret = context.Request.Headers["Authorization"].FirstOrDefault();
         if (string.IsNullOrWhiteSpace(appSecret))
@@ -209,7 +217,7 @@ public sealed class ScheduleUIMiddleware
         if (action != "/login" && !string.Equals(appSecret, Options.LoginConfig.AppSecret, StringComparison.Ordinal))
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            await context.Response.WriteAsync("非法操作");
+            await context.Response.WriteAsync("401 Unauthorized");
             return;
         }
 
@@ -444,42 +452,33 @@ public sealed class ScheduleUIMiddleware
                 var username = context.Request.Form["username"];
                 var password = context.Request.Form["password"];
 
-                // 如果未配置登录密钥或者长度不足 16 个字符，则直接返回 401
-                if (string.IsNullOrWhiteSpace(Options.LoginConfig.AppSecret) || Options.LoginConfig.AppSecret.Trim().Length < 16)
+                try
                 {
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    await context.Response.WriteAsync("系统未正确配置登录密钥");
+                    // 调用自定义验证逻辑
+                    if (Options.LoginConfig?.OnLoging is not null && await Options.LoginConfig.OnLoging(username, password, context))
+                    {
+                        context.Response.Headers["access-token"] = Options.LoginConfig.AppSecret;
+                        context.Response.Headers.Append("Access-Control-Expose-Headers", "access-token");
+                        context.Response.StatusCode = StatusCodes.Status200OK;
+                        await context.Response.WriteAsync("OK");
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        await context.Response.WriteAsync("Invalid username or password");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    try
-                    {
-                        // 调用自定义验证逻辑
-                        if (Options.LoginConfig?.OnLoging is not null && await Options.LoginConfig.OnLoging(username, password, context))
-                        {
-                            context.Response.Headers["access-token"] = Options.LoginConfig.AppSecret;
-                            context.Response.Headers.Append("Access-Control-Expose-Headers", "access-token");
-                            context.Response.StatusCode = StatusCodes.Status200OK;
-                            await context.Response.WriteAsync("OK");
-                        }
-                        else
-                        {
-                            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                            await context.Response.WriteAsync("用户名或密码错误");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                        await context.Response.WriteAsync(ex.Message);
-                    }
+                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                    await context.Response.WriteAsync(ex.Message);
                 }
 
                 break;
             // 未处理接口
             default:
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
-                await context.Response.WriteAsync("Not Found");
+                await context.Response.WriteAsync("404 Not Found");
                 return;
         }
     }

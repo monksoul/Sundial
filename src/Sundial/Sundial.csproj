@@ -20,7 +20,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="TimeCrontab" Version="3.7.3" />
+		<PackageReference Include="TimeCrontab" Version="3.8.0" />
 	</ItemGroup>
 
 </Project>

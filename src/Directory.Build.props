@@ -31,6 +31,7 @@
 		<None Include="..\Directory.Build.props" Pack="true" PackagePath="\"/>
 		<None Include="..\icon.png" Pack="true" PackagePath="\"/>
 		<None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+		<None Include="..\..\README.zh.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>
 
 </Project>

@@ -5,16 +5,16 @@
 namespace Sundial;
 
 /// <summary>
-/// 每周一至周五（午夜）开始作业触发器特性
+/// 每周六和周日（午夜）开始作业触发器特性
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-public sealed class WorkdayAttribute : CronAttribute
+public sealed class WeekendsAttribute : CronAttribute
 {
     /// <summary>
     /// 构造函数
     /// </summary>
-    public WorkdayAttribute()
-        : base("@workday")
+    public WeekendsAttribute()
+        : base("@weekends")
     {
     }
 }

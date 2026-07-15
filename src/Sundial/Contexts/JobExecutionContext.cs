@@ -3,6 +3,7 @@
 // 此源代码遵循位于源代码树根目录中的 LICENSE 文件的许可证。
 
 using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json;
 
 namespace Sundial;
 
@@ -122,7 +123,18 @@ public abstract class JobExecutionContext : IServiceProvider
     /// <returns><typeparamref name="T"/></returns>
     public T GetItem<T>(string key)
     {
-        return Items.TryGetValue(key, out var value) ? (T)value : default;
+        if (Items.TryGetValue(key, out var value))
+        {
+            // 处理手动执行传递的自定义数据
+            if (value is JsonElement element && typeof(T) != typeof(object))
+            {
+                return element.Deserialize<T>(Penetrates.GetDefaultJsonSerializerOptions());
+            }
+
+            return (T)value;
+        }
+
+        return default;
     }
 
     /// <summary>
@@ -155,19 +167,19 @@ public abstract class JobExecutionContext : IServiceProvider
         // 解析作业计划工厂服务
         schedulerFactory ??= Factory;
 
-        // 情况 1：检查作业是否存在
+        // 检查作业是否存在
         if (schedulerFactory.TryGetJob(JobId, out var scheduler) != ScheduleResult.Succeed)
         {
             return false;
         }
 
-        // 情况 2：检查作业触发器是否存在
+        // 检查作业触发器是否存在
         if (scheduler.TryGetTrigger(TriggerId, out var trigger) != ScheduleResult.Succeed)
         {
             return false;
         }
 
-        // 情况 3：检查作业触发器是否正常运行
+        // 检查作业触发器是否正常运行
         return trigger.IsNormalStatus();
     }
 
